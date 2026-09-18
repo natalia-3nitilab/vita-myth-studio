@@ -14,6 +14,17 @@ const out = await p.evaluate(() => {
     min: [x.min.x, x.min.y, x.min.z].map(n=>+n.toFixed(3)),
     max: [x.max.x, x.max.y, x.max.z].map(n=>+n.toFixed(3)) }; };
   const res = { wear: [], body: null, sceneQuat: null, spine: null };
+  const sceneBox = new T.Box3().setFromObject(v.scene);
+  res.sceneBox = { min:[sceneBox.min.x,sceneBox.min.y,sceneBox.min.z].map(n=>+n.toFixed(3)),
+                   max:[sceneBox.max.x,sceneBox.max.y,sceneBox.max.z].map(n=>+n.toFixed(3)) };
+  for (const bn of ['head','chest','hips','leftFoot']) {
+    const n = v.humanoid.getRawBoneNode(bn);
+    const w = new T.Vector3(), sc = new T.Vector3();
+    n.getWorldPosition(w); n.getWorldScale(sc);
+    res[bn] = { pos:[w.x,w.y,w.z].map(x=>+x.toFixed(3)), scale:+sc.x.toFixed(3) };
+  }
+  const rs = new T.Vector3(); v.scene.getWorldScale(rs);
+  res.sceneScale = +rs.x.toFixed(4);
   const sq = new T.Quaternion(); v.scene.getWorldQuaternion(sq);
   res.sceneQuat = [sq.x, sq.y, sq.z, sq.w].map(n=>+n.toFixed(3));
   const sp = v.humanoid.getRawBoneNode('spine');
