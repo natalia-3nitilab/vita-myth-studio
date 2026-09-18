@@ -1,8 +1,15 @@
 import { chromium } from 'playwright-core';
-const b = await chromium.launch({ executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' });
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+// Resolve from this file, not from an absolute home path, so a clone can run it.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const CHROME = process.env.CHROME_PATH
+  || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const b = await chromium.launch({ executablePath: CHROME });
 const p = await b.newPage({ viewport:{width:1250,height:1000} });
 const errs=[]; p.on('pageerror',e=>errs.push(e.message));
-await p.goto('file:///Users/natalia/YouTube/vita-myth-studio/dashboard/index.html');
+await p.goto('file://' + path.join(HERE, 'index.html'));
 await p.evaluate(()=>{try{localStorage.clear();}catch(e){}}); await p.reload(); await p.waitForTimeout(900);
 
 await p.click('.tab[data-v="ren"]'); await p.waitForTimeout(1200);

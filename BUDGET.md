@@ -11,7 +11,7 @@ Every number here was measured on a finished 9:20 episode, not estimated.
 | motion | Mixamo, free with an Adobe account | **free** |
 | backdrops | 11 images, one per story beat | $0.43 – $1.11 |
 | render | three.js + headless Chrome + ffmpeg, local | **free** |
-| **total** | | **$0.45 – $1.13** |
+| **total** | | **$0.45 – $1.67** |
 
 The backdrop range is the whole variable. Cost moves with the image model and the
 resolution you ask for, not with the length of the episode — a 10-minute episode and a
@@ -19,17 +19,25 @@ resolution you ask for, not with the length of the episode — a 10-minute episo
 
 ## What $300 buys
 
+Eleven backdrops plus ~$0.02 of script per episode. Re-checked 18 Sep 2026, when the
+successor model's price replaced the estimate that used to be in this table.
+
 | at | per episode | episodes | hours of video |
 | --- | --- | --- | --- |
-| $0.039/image (2.5 Flash Image) | $0.45 | ~660 | ~110 |
-| $0.067/image (3.x Flash Image, 1K) | $0.76 | ~390 | ~65 |
-| $0.101/image (3.x Flash Image, 2K) | $1.13 | ~265 | ~44 |
+| $0.039/image — 2.5 Flash Image, **retires 2 Oct 2026** | $0.45 | ~668 | ~111 |
+| $0.045/image — 3.1 Flash Image, low end | $0.52 | ~582 | ~97 |
+| $0.150/image — 3.1 Flash Image, high end | $1.67 | ~179 | ~30 |
 
-Call it **250–400 ten-minute episodes** as the honest headline, or **650+** if you stay on
-the cheapest model while it exists.
+The honest headline is **180–580 ten-minute episodes**, or **30–97 hours of video**. The
+episode count is the more robust of the two claims because it does not depend on how long
+you make each episode.
 
-Render time is the other budget: 7.4 minutes of laptop compute per episode, so 265 episodes
-is about 33 hours of rendering. That is the real constraint at volume, not the money.
+Above ~$0.15 an image the arithmetic changes character: `gemini-3-pro-image` is quoted at
+$0.13–$0.24 an image, which is $1.45–$2.66 an episode and 113–207 episodes on the credit.
+Still cheap per minute of finished video; no longer "free credit covers a channel".
+
+Render time is the other budget: 7.4 minutes of laptop compute per episode, so 180 episodes
+is about 22 hours of rendering, and 580 is about 72. That is the real constraint at volume, not the money.
 
 ## Break-even
 
@@ -51,12 +59,29 @@ is not when each episode costs $500 of per-frame generation.
 
 ## Deprecation — read this before quoting any figure
 
-`gemini-2.5-flash-image`, the model these costs were measured on, is **deprecated and
-retires 2 October 2026.** Its successor prices images by resolution rather than flat, which
-is why the table above has a range instead of a number.
+`gemini-2.5-flash-image`, the model the per-episode cost was measured on, is **deprecated
+and retires 2 October 2026.** The successor is **`gemini-3.1-flash-image`**, and it prices
+by resolution rather than flat — published figures put it at **$0.045–$0.15 an image**,
+which is why the table above is a range and not a number.
 
-Re-measure before publishing any cost claim. `episode/build/backdrops.py` takes the model
-from `GEMINI_IMAGE_MODEL`, so switching is one environment variable.
+**The $0.045–$0.15 figures are third-party, not measured here.** Google's own pricing page
+did not resolve cleanly when this was checked on 18 Sep 2026, so treat them as an estimate
+until you have replaced them with your own measurement:
+
+`backdrops.py` takes no arguments and skips images that already exist, so the way to price
+one image is to delete one and let it regenerate just that one:
+
+```bash
+rm backdrops/dawn.png
+GOOGLE_CLOUD_PROJECT=<id> python episode/build/backdrops.py   # regenerates dawn only
+```
+
+Then read the actual charge in the billing console. The script's own "about $X" line is an
+estimate from `GEMINI_IMAGE_PRICE` (default $0.045), not a measurement.
+
+Switching model is one environment variable — `episode/build/backdrops.py` reads
+`GEMINI_IMAGE_MODEL`. Re-measure before putting any cost figure in a video, a README or a
+thumbnail, and quote a range with the model named beside it.
 
 ## Staying inside the free credit
 

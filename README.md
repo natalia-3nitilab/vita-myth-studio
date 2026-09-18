@@ -23,18 +23,18 @@ flickers and every render is identical.
 | **Material** | traditional tales, genuinely out of copyright. Never a story by a named modern author, and never an invented "folk tale" |
 | **Character** | Vita (VRM). Verify the licence embedded in any `.vrm` before monetising |
 | **Motion** | Mixamo, free with an Adobe account |
-| **Backdrops** | Gemini 2.5 Flash Image on Vertex, ~$0.04 each, ~11 per episode |
+| **Backdrops** | Gemini 3.1 Flash Image on Vertex, $0.045–$0.15 each, ~11 per episode |
 | **Voice** | Kokoro-82M, local, free |
 
 Competitor research — who else retells folklore at this length, what they title, and which
 tales are already saturated — is researched against live Google Search and kept on the
-niche record in [deep-science-studio](../deep-science-studio). The current snapshot is
+niche record in [deep-science-studio](https://github.com/natalia-3nitilab/deep-science-studio). The current snapshot is
 [docs/NICHE.md](docs/NICHE.md); refresh it rather than editing it.
 
 This is one of four pipelines. The others are
-[deep-science-studio](../deep-science-studio) (stock footage and image motion),
-[duo-reels-studio](../duo-reels-studio) (two characters, vertical reels) and
-[psyche-anime-studio](../psyche-anime-studio) (locally generated anime stills).
+[deep-science-studio](https://github.com/natalia-3nitilab/deep-science-studio) (stock footage and image motion),
+[duo-reels-studio](https://github.com/natalia-3nitilab/duo-reels-studio) (two characters, vertical reels) and
+[psyche-anime-studio](https://github.com/natalia-3nitilab/psyche-anime-studio) (locally generated anime stills).
 
 ## Why not generate the frames
 
@@ -53,7 +53,7 @@ generates **eleven** background images and reuses them across 13,436 frames.
 | Cost | ~$0.86, all of it backdrops |
 | Voice | Kokoro-82M, local, free |
 | Motion | Mixamo, free with an Adobe account |
-| Backdrops | Gemini 2.5 Flash Image on Vertex, ~$0.04 each |
+| Backdrops | Gemini 3.1 Flash Image on Vertex, $0.045–$0.15 each |
 
 ## How it works
 
@@ -146,8 +146,8 @@ a republish and can be read back when generating the next episode.
 
 ## Cost
 
-A ten-minute episode costs **$0.45 – $1.13**, all of it backdrops. $300 of Google trial
-credit is roughly **250–400 episodes**. Full arithmetic, including break-even views and an
+A ten-minute episode costs **$0.45 – $1.67**, all of it backdrops. $300 of Google trial
+credit is roughly **180–580 episodes**. Full arithmetic, including break-even views and an
 urgent note about model deprecation, in [BUDGET.md](BUDGET.md).
 
 ## Quick start

@@ -30,11 +30,13 @@ automates the export for a pinned list of motions; it needs a token, which it re
 Mixamo's catalogue API is public; exports require an Adobe IMS token. Review Adobe's terms
 for your use before publishing work made with them.
 
-## Backdrops — Gemini 2.5 Flash Image on Vertex AI (Google)
+## Backdrops — Gemini image generation on Vertex AI (Google)
 
-Generated per project and not committed. Authentication is Application Default
-Credentials, so no key is ever pasted into or read back from this repository. Review
-Google's terms for generated-content ownership and usage.
+Generated per project and not committed. The model is whatever `GEMINI_IMAGE_MODEL`
+names — `gemini-3.1-flash-image` by default, since `gemini-2.5-flash-image` retires
+2 October 2026. Authentication is Application Default Credentials, so no key is ever
+pasted into or read back from this repository. Review Google's terms for
+generated-content ownership and usage.
 
 The pipeline runs without this step — missing backdrops fall back to procedural gradients.
 

@@ -14,11 +14,16 @@ from google import genai
 from google.genai import types
 from PIL import Image
 
-MODEL = os.environ.get("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
+# gemini-2.5-flash-image retires 2 Oct 2026, so it cannot be the default. Pin the old
+# model with GEMINI_IMAGE_MODEL while it still exists.
+MODEL = os.environ.get("GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image")
 PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT")
 LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
 OUT = "backdrops"
-PRICE = 0.039
+# Per-image price for the running total below. It is an ESTIMATE used only for the
+# printed figure: 3.1 Flash Image prices by resolution ($0.045-$0.15 published), so the
+# real charge comes from the billing console, not from here. Override to match.
+PRICE = float(os.environ.get("GEMINI_IMAGE_PRICE", "0.045"))
 
 if not PROJECT:
     sys.exit("set GOOGLE_CLOUD_PROJECT")
@@ -101,4 +106,5 @@ for name, scene in todo:
     made += 1; spent += PRICE
     print(f"{name:9s} {im.size[0]}x{im.size[1]} {time.time()-t:.0f}s  (${spent:.2f})", flush=True)
 
-print(f"DONE {made} backdrops in {(time.time()-t0)/60:.1f} min, about ${spent:.2f}", flush=True)
+print(f"DONE {made} backdrops in {(time.time()-t0)/60:.1f} min, "
+      f"about ${spent:.2f} at the estimated ${PRICE:.3f}/image ({MODEL})", flush=True)
