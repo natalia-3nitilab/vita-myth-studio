@@ -81,6 +81,13 @@ video{width:100%;border-radius:6px;background:#000;display:block;margin-bottom:1
  font-family:var(--mono);font-size:10.5px;padding:2px 4px}
 .dir select:focus{color:var(--ink);border-color:var(--accent);outline:none}
 .para.marked .meta b{color:var(--accent)}
+.pickrow{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--rule);
+ background:var(--card);border-radius:8px;padding:10px 13px}
+.pickrow:hover{border-color:var(--accent)}
+.pickrow.on{border-color:var(--accent);background:var(--accent-soft)}
+.pickrow .pickbtn{border:0;background:none;padding:0;cursor:pointer;display:flex;gap:10px;
+ align-items:flex-start;flex-shrink:0}
+.pickrow .txt{font-family:var(--serif);font-size:15px;line-height:1.5;flex:1;min-width:0}
 .picks{display:flex;flex-direction:column;gap:7px;margin:10px 0 0;padding:0;list-style:none}
 .pick{display:flex;gap:11px;align-items:flex-start;width:100%;text-align:left;cursor:pointer;
  border:1px solid var(--rule);background:var(--card);border-radius:8px;padding:10px 13px;
@@ -159,7 +166,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;border-top:1px solid va
 <script>
 (function(){
 var D=JSON.parse(document.getElementById('data').textContent);
-var WPM=D.wpm,DB=null,DL=null,store={tone:{},bg:{},pack:{},queue:[],jobs:{},watch:{},dirty:{},stage:{},est:{}},open=null;
+var WPM=D.wpm,DB=null,DL=null,store={tone:{},bg:{},pack:{},queue:[],jobs:{},watch:{},dirty:{},stage:{},est:{},hookEdit:{}},open=null;
 var SEEDS=["Why Do We Still Tell the Same Stories?", "Why Does Every Culture Have a Flood Story?", "Why Do Heroes Always Break the One Rule?", "What Were Monsters Actually For?", "Why Is the Underworld Always Downward?", "What Happens to a Story Nobody Writes Down?", "Why Do So Many Myths End Badly?", "Who Were the Gods Really For?", "Why Does Every Myth Carry a Warning?", "What Did People Believe Before History?"];
 var STAGES=["plan","script","narrated","rendered","published"];
 var TUNE={tone:['plain','warm','sombre','wry','urgent'],pace:['slow','measured','brisk'],
@@ -199,29 +206,51 @@ function epList(){
 function hookHtml(id){
   var hooks=(D.package&&D.package.hooks)||[],tn=store.tone[id]||{};
   var picked=(tn.hook===null||tn.hook===undefined)?((D.defaults||{}).hook):tn.hook;
-  // Once the script has been rendered the hook is baked into the narration; changing it
-  // here would describe an episode that does not exist.
-  var ep=D.episodes.filter(function(x){return x.id===id;})[0];
-  var locked=!!(ep&&(ep.renders||[]).length);
   var has=picked===0||picked>0;
+  var ep=D.episodes.filter(function(x){return x.id===id;})[0];
+  var rendered=!!(ep&&(ep.renders||[]).length);
+  var editing=!!store.hookEdit[id];
+
   if(!hooks.length) return '<div class="panel"><p class="rule">No hook pass yet.</p>'+
-    '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">Run the hook pass</button></div>';
+    '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">Run the hook pass \u00b7 '+
+    esc(fmtEst(estMin('hooks',id)))+'</button></div>';
+
+  // Rendered and not being changed: the chosen hook only. The alternatives are not in the
+  // DOM at all, so there is nothing to tab into.
+  if(rendered && !editing){
+    return '<div class="panel">'+
+      '<ul class="picks"><li class="pickrow on">'+
+        '<span class="pickbtn"><span class="rad" style="box-shadow:inset 0 0 0 3px var(--accent);'+
+        'border-color:var(--accent)"></span><span class="n">'+(has?picked+1:'')+'</span></span>'+
+        '<span class="txt">'+esc(has?hooks[picked]:'\u2014')+'</span></li></ul>'+
+      '<div class="gate">'+
+        '<button class="btn ghost" data-unlockhook="'+id+'">Unlock</button>'+
+        '<span class="rule">this hook is in the rendered narration</span>'+
+      '</div><div id="hookOut"></div></div>';
+  }
+
   return '<div class="panel">'+
     '<p class="rule">Pillar 3: the hook is the most important part of the video, so it is '+
-    'written separately. Choose one before rendering \u2014 it becomes the opening.</p>'+
-    '<ul class="picks'+(locked?' locked':'')+'">'+hooks.map(function(h,i){
-      return '<li><button class="pick" data-pickhook="'+i+'" data-ep="'+id+'" aria-pressed="'+
-        (picked===i)+'"><span class="rad"></span><span class="n">'+(i+1)+'</span><span>'+
-        esc(h)+'</span></button></li>';
+    'written separately. Choose one \u2014 it becomes the opening.</p>'+
+    '<ul class="picks">'+hooks.map(function(h,i){
+      return '<li class="pickrow'+(picked===i?' on':'')+'">'+
+        '<button class="pickbtn" data-pickhook="'+i+'" data-ep="'+id+'" aria-pressed="'+
+        (picked===i)+'" aria-label="choose hook '+(i+1)+'">'+
+        '<span class="rad"></span><span class="n">'+(i+1)+'</span></button>'+
+        '<span class="txt">'+esc(h)+'</span></li>';
     }).join('')+'</ul>'+
-    (locked?'<p class="lockline">Locked \u2014 this script has been rendered. Re-render to change the hook.</p>':'')+
     '<div class="gate">'+
-      '<button class="btn" data-render="'+id+'" data-job="render-'+id+'"'+(has?'':' disabled')+
-      '>Render this script'+(estMin('render',id)?' \u00b7 '+esc(fmtEst(estMin('render',id))):'')+'</button>'+
-      '<span class="rule">'+(has?('hook '+(picked+1)+' will open the episode')
-                                :'pick a hook to enable rendering')+'</span>'+
-      '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">New hook pass \u00b7 '+
-        esc(fmtEst(estMin('hooks',id)))+'</button>'+
+      (editing
+        ? '<button class="btn" data-render="'+id+'" data-job="render-'+id+'"'+(has?'':' disabled')+
+          '>Save and re-render \u00b7 '+esc(fmtEst(estMin('render',id)))+'</button>'+
+          '<button class="btn ghost" data-cancelhook="'+id+'">Cancel</button>'+
+          '<span class="rule">re-renders the video from this script \u2014 the script is not rewritten</span>'
+        : '<button class="btn" data-render="'+id+'" data-job="render-'+id+'"'+(has?'':' disabled')+
+          '>Render this script \u00b7 '+esc(fmtEst(estMin('render',id)))+'</button>'+
+          '<span class="rule">'+(has?('hook '+(picked+1)+' will open the episode')
+                                    :'pick a hook to enable rendering')+'</span>'+
+          '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">New hook pass \u00b7 '+
+            esc(fmtEst(estMin('hooks',id)))+'</button>')+
     '</div><div id="hookOut"></div></div>';
 }
 function packHtml(id){
@@ -236,10 +265,12 @@ function packHtml(id){
   return '<h2>Title</h2><div class="panel">'+
     '<p class="rule">Pillar 2: broad beats accurate. Pick one \u2014 it names the file and the thumbnail.</p>'+
     '<ul class="picks">'+(pk.titles||[]).map(function(x,i){
-      return '<li><button class="pick" data-picktitle="'+i+'" data-ep="'+id+'" aria-pressed="'+
-        (chosen===i)+'"><span class="rad"></span><span class="n">'+(i+1)+'</span>'+
-        '<span contenteditable="plaintext-only" data-edit="title" data-i="'+i+'" data-ep="'+id+
-        '">'+esc((over.titles||{})[i]||x)+'</span></button></li>';
+      return '<li class="pickrow'+(chosen===i?' on':'')+'">'+
+        '<button class="pickbtn" data-picktitle="'+i+'" data-ep="'+id+'" aria-pressed="'+
+        (chosen===i)+'" aria-label="choose title '+(i+1)+'">'+
+        '<span class="rad"></span><span class="n">'+(i+1)+'</span></button>'+
+        '<span class="txt" contenteditable="plaintext-only" data-edit="title" data-i="'+i+
+        '" data-ep="'+id+'">'+esc((over.titles||{})[i]||x)+'</span></li>';
     }).join('')+'</ul></div>'+
     '<h2>Tags</h2><div class="panel"><div class="pkbox" contenteditable="plaintext-only" '+
       'data-edit="tags" data-ep="'+id+'">'+esc(over.tags||(pk.tags||[]).join(', '))+'</div>'+
@@ -263,11 +294,14 @@ function epDetail(id){
   var dirs=(store.tone[id]||{}).paras||((D.defaults&&D.defaults.paras)||{});
   var PAUSES=['','0.5','1','1.5','2','3'],PACES=['normal','slow','fast'];
   var paras=sc.paras.map(function(p,i){
-    var d=p.w/WPM*60,at=cum,dir=dirs[i]||{};
+    var dir=dirs[i]||{};
+    // Time the text that will actually be spoken, not the line it replaced.
+    var words=dir.text?dir.text.trim().split(/\s+/).filter(Boolean).length:p.w;
+    var d=words/WPM*60,at=cum;
     cum+=d+(parseFloat(dir.pause)||0);
     var L=d>45,marked=!!(dir.pause||(dir.pace&&dir.pace!=='normal'));
     return '<div class="para'+(L?' long':'')+(marked?' marked':'')+'">'+
-      '<div class="meta"><b>'+clock(at)+'</b>'+d.toFixed(0)+'s \u00b7 '+p.w+'w'+
+      '<div class="meta"><b>'+clock(at)+'</b>'+d.toFixed(0)+'s \u00b7 '+words+'w'+
       (L?'<span class="flag">runs long</span>':'')+
       '<div class="dir">'+
         '<select data-dir="pace" data-i="'+i+'" data-ep="'+id+'" title="pace for this paragraph">'+
@@ -299,9 +333,11 @@ function renderEps(){document.getElementById('v-eps').innerHTML=open?epDetail(op
 function pubAt(id){ return (store.stage[id]||{}).at||null; }
 function pubRender(id){ return (store.stage[id]||{}).render||null; }
 function chosenTitle(id){
-  var pk=D.package||{},tn=store.tone[id]||{};
+  var pk=D.package||{},tn=store.tone[id]||{},ed=(tn.edits||{}).titles||{};
   var i=(tn.title===null||tn.title===undefined)?((D.defaults||{}).title):tn.title;
-  var t=(pk.titles||[])[i];
+  // An edited title is the title. Reading only the generated set left the render heading,
+  // the download name and the job label showing text the user had already replaced.
+  var t=ed[i]||(pk.titles||[])[i];
   return t||(D.episodes.filter(function(x){return x.id===id;})[0]||{}).title||id;
 }
 function whenStr(iso){
@@ -466,7 +502,10 @@ function learn(kind,job){
   var mins=(new Date(job.doneAt)-new Date(job.at))/60000;
   if(!(mins>0)||mins>180)return;
   if(kind==='render'){
-    var sc=script((D.episodes[0]||{}).script);
+    // The job's own episode, not the first one on the page: normalising a 20 minute
+    // episode by a 9 minute one more than doubles every later estimate.
+    var ep=D.episodes.filter(function(x){return x.id===job.episode;})[0];
+    var sc=script((ep||{}).script);
     mins=mins/((sc?sc.words/WPM:9.3)||1);
   }
   var cur=store.est[kind]||{mean:null,n:0};
@@ -567,8 +606,16 @@ document.addEventListener('click',async function(ev){
         if(ob)ob.setAttribute('aria-expanded','false'); }
     });
   }
-  if((el=t.closest&&t.closest('.tab'))){Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(o){
-    var on=o===el;o.setAttribute('aria-selected',String(on));document.getElementById('v-'+o.dataset.v).hidden=!on;});return;}
+  if((el=t.closest&&t.closest('.tab'))){
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(o){
+      var on=o===el;o.setAttribute('aria-selected',String(on));
+      document.getElementById('v-'+o.dataset.v).hidden=!on;});
+    // Re-render the panel being shown. Switching tabs only unhid a panel that had been
+    // built at load, so an edited title still showed its generated text on Renders.
+    if(el.dataset.v==='ren')renderRen();
+    else if(el.dataset.v==='bgs')renderBgs();
+    else renderEps();
+    return;}
   if((el=t.closest&&t.closest('.epcard'))&&el.dataset.ep){open=el.dataset.ep;renderEps();return;}
   if(t.id==='back'){open=null;renderEps();return;}
   if((el=t.closest&&t.closest('[data-seed]'))){
@@ -620,6 +667,10 @@ document.addEventListener('click',async function(ev){
     tc.title=(tc.title===ti2)?null:ti2;
     tc.saved=new Date().toLocaleString();
     save('tone',tid,tc); renderEps(); return;}
+  if((el=t.closest&&t.closest('[data-unlockhook]'))){
+    store.hookEdit[el.dataset.unlockhook]=true; renderEps(); return;}
+  if((el=t.closest&&t.closest('[data-cancelhook]'))){
+    delete store.hookEdit[el.dataset.cancelhook]; renderEps(); return;}
   if((el=t.closest&&t.closest('[data-pickhook]'))){
     var hid=el.dataset.ep,cur=store.tone[hid]||{};
     var idx=parseInt(el.dataset.pickhook,10);
@@ -630,6 +681,7 @@ document.addEventListener('click',async function(ev){
     var wq=store.queue.filter(function(x){return x.id===el.dataset.write;})[0]||{};
     startJob('script',el.dataset.write,el,'draftOut',wq.topic); return;}
   if((el=t.closest&&t.closest('[data-render]'))){
+    delete store.hookEdit[el.dataset.render];
     startJob('render',el.dataset.render,el,'renderOut',chosenTitle(el.dataset.render)); return;}
   if((el=t.closest&&t.closest('[data-hooks]'))){
     startJob('hooks',el.dataset.hooks,el,'hookOut',chosenTitle(el.dataset.hooks)); return;}
@@ -685,7 +737,10 @@ document.addEventListener('focusout',function(ev){
   } else if(kind==='title'){
     cur.edits.titles=cur.edits.titles||{};
     cur.edits.titles[ev.target.dataset.i]=val;
-  } else cur.edits[kind]=val;
+  } else {
+    if((cur.edits[kind]||'')===val) return;   // a blur with no change is not an edit
+    cur.edits[kind]=val;
+  }
   cur.saved=new Date().toLocaleString();
   save('tone',epi,cur);
   return;
