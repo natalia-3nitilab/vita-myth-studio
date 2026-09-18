@@ -96,14 +96,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 page.on('pageerror', e => console.log('  page exception:', e.message));
 const bdUrl = 'file://' + path.join(ROOT, 'backdrops');   // resolved by the stage page
-// LOOK picks a wardrobe set out of stage/looks.mjs. Unset renders the character in her own
-// baked outfit, which is what every episode so far has done — the looks existed but the
-// renderer never passed one, so they only ever appeared on the contact sheet.
-//   LOOK=volva npm run render
-const look = (process.env.LOOK || '').trim();
-await page.goto(`file://${STAGE}?char=${encodeURIComponent(process.env.CHARACTER || '../assets/Vita.vrm')}&w=${W}&h=${H}`
-  + (look ? `&look=${encodeURIComponent(look)}` : '')
-  + `&backdrops=${encodeURIComponent(bdUrl)}`);
+await page.goto(`file://${STAGE}?char=${encodeURIComponent(process.env.CHARACTER || '../assets/Vita.vrm')}&w=${W}&h=${H}&backdrops=${encodeURIComponent(bdUrl)}`);
 await page.waitForFunction('window.READY === true', null, { timeout: 240000 });
 const st = await page.evaluate(() => window.STATUS);
 console.log(`character: ${st.char}  head ${st.headHeight}m   clips ${st.clips.length}`);
