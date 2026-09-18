@@ -116,6 +116,12 @@ video{width:100%;border-radius:6px;background:#000;display:block;margin-bottom:1
  font-size:15px;line-height:1.6;white-space:pre-wrap}
 canvas{max-width:100%;border-radius:6px;border:1px solid var(--rule);display:block;margin-top:8px}
 .rule{font-size:11.5px;color:var(--faint);margin-top:6px}
+[contenteditable]{outline:none;border-radius:4px;padding:2px 4px;margin:-2px -4px}
+[contenteditable]:hover{background:var(--accent-soft)}
+[contenteditable]:focus{background:var(--card);box-shadow:0 0 0 2px var(--accent)}
+.edited{border-left:2px solid var(--accent);padding-left:9px}
+.locked{opacity:.55;pointer-events:none}
+.lockline{font-size:11.5px;color:var(--warn);margin-top:8px}
 .steps{list-style:none;margin:10px 0 0;padding:0}
 .steps li{display:grid;grid-template-columns:20px 1fr;gap:9px;align-items:center;padding:6px 0;
  border-bottom:1px solid var(--rule);font-size:13px;color:var(--faint)}
@@ -153,7 +159,7 @@ footer{margin-top:28px;color:var(--faint);font-size:12px;border-top:1px solid va
 <script>
 (function(){
 var D=JSON.parse(document.getElementById('data').textContent);
-var WPM=D.wpm,DB=null,DL=null,store={tone:{},bg:{},pack:{},queue:[],jobs:{},watch:{},dirty:{},stage:{}},open=null;
+var WPM=D.wpm,DB=null,DL=null,store={tone:{},bg:{},pack:{},queue:[],jobs:{},watch:{},dirty:{},stage:{},est:{}},open=null;
 var SEEDS=["Why Do We Still Tell the Same Stories?", "Why Does Every Culture Have a Flood Story?", "Why Do Heroes Always Break the One Rule?", "What Were Monsters Actually For?", "Why Is the Underworld Always Downward?", "What Happens to a Story Nobody Writes Down?", "Why Do So Many Myths End Badly?", "Who Were the Gods Really For?", "Why Does Every Myth Carry a Warning?", "What Did People Believe Before History?"];
 var STAGES=["plan","script","narrated","rendered","published"];
 var TUNE={tone:['plain','warm','sombre','wry','urgent'],pace:['slow','measured','brisk'],
@@ -193,23 +199,29 @@ function epList(){
 function hookHtml(id){
   var hooks=(D.package&&D.package.hooks)||[],tn=store.tone[id]||{};
   var picked=(tn.hook===null||tn.hook===undefined)?((D.defaults||{}).hook):tn.hook;
+  // Once the script has been rendered the hook is baked into the narration; changing it
+  // here would describe an episode that does not exist.
+  var ep=D.episodes.filter(function(x){return x.id===id;})[0];
+  var locked=!!(ep&&(ep.renders||[]).length);
   var has=picked===0||picked>0;
   if(!hooks.length) return '<div class="panel"><p class="rule">No hook pass yet.</p>'+
     '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">Run the hook pass</button></div>';
   return '<div class="panel">'+
     '<p class="rule">Pillar 3: the hook is the most important part of the video, so it is '+
     'written separately. Choose one before rendering \u2014 it becomes the opening.</p>'+
-    '<ul class="picks">'+hooks.map(function(h,i){
+    '<ul class="picks'+(locked?' locked':'')+'">'+hooks.map(function(h,i){
       return '<li><button class="pick" data-pickhook="'+i+'" data-ep="'+id+'" aria-pressed="'+
         (picked===i)+'"><span class="rad"></span><span class="n">'+(i+1)+'</span><span>'+
         esc(h)+'</span></button></li>';
     }).join('')+'</ul>'+
+    (locked?'<p class="lockline">Locked \u2014 this script has been rendered. Re-render to change the hook.</p>':'')+
     '<div class="gate">'+
       '<button class="btn" data-render="'+id+'" data-job="render-'+id+'"'+(has?'':' disabled')+
-      '>Render this script</button>'+
+      '>Render this script'+(estMin('render',id)?' \u00b7 '+esc(fmtEst(estMin('render',id))):'')+'</button>'+
       '<span class="rule">'+(has?('hook '+(picked+1)+' will open the episode')
                                 :'pick a hook to enable rendering')+'</span>'+
-      '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">New hook pass</button>'+
+      '<button class="btn ghost" data-hooks="'+id+'" data-job="hooks-'+id+'">New hook pass \u00b7 '+
+        esc(fmtEst(estMin('hooks',id)))+'</button>'+
     '</div><div id="hookOut"></div></div>';
 }
 function packHtml(id){
@@ -219,17 +231,21 @@ function packHtml(id){
     pk[k]=full(over[k])?over[k]:base[k];
   });
   if(!full(pk.titles)&&!full(pk.description)) return '';
-  var tn2=store.tone[id]||{};
+  var tn2=store.tone[id]||{}, over=tn2.edits||{};
   var chosen=(tn2.title===null||tn2.title===undefined)?((D.defaults||{}).title):tn2.title;
   return '<h2>Title</h2><div class="panel">'+
     '<p class="rule">Pillar 2: broad beats accurate. Pick one \u2014 it names the file and the thumbnail.</p>'+
     '<ul class="picks">'+(pk.titles||[]).map(function(x,i){
       return '<li><button class="pick" data-picktitle="'+i+'" data-ep="'+id+'" aria-pressed="'+
-        (chosen===i)+'"><span class="rad"></span><span class="n">'+(i+1)+'</span><span>'+
-        esc(x)+'</span></button></li>';
+        (chosen===i)+'"><span class="rad"></span><span class="n">'+(i+1)+'</span>'+
+        '<span contenteditable="plaintext-only" data-edit="title" data-i="'+i+'" data-ep="'+id+
+        '">'+esc((over.titles||{})[i]||x)+'</span></button></li>';
     }).join('')+'</ul></div>'+
-    '<h2>Tags</h2><div class="panel"><div class="pkbox">'+esc((pk.tags||[]).join(', '))+'</div></div>'+
-    '<h2>Description</h2><div class="panel"><div class="pkbox">'+esc(pk.description||'')+'</div></div>';
+    '<h2>Tags</h2><div class="panel"><div class="pkbox" contenteditable="plaintext-only" '+
+      'data-edit="tags" data-ep="'+id+'">'+esc(over.tags||(pk.tags||[]).join(', '))+'</div>'+
+      '<p class="rule">comma separated</p></div>'+
+    '<h2>Description</h2><div class="panel"><div class="pkbox" contenteditable="plaintext-only" '+
+      'data-edit="description" data-ep="'+id+'">'+esc(over.description||pk.description||'')+'</div></div>';
 }
 function epDetail(id){
   var e=D.episodes.filter(function(x){return x.id===id;})[0];
@@ -260,7 +276,8 @@ function epDetail(id){
         '<select data-dir="pause" data-i="'+i+'" data-ep="'+id+'" title="silence after this paragraph">'+
         PAUSES.map(function(v){return '<option value="'+v+'"'+((dir.pause||'')===v?' selected':'')+
           '>'+(v?('+'+v+'s'):'no pause')+'</option>';}).join('')+'</select>'+
-      '</div></div><p>'+esc(p.t)+'</p></div>';}).join('');
+      '</div></div><p contenteditable="plaintext-only" data-edit="para" data-i="'+i+'" data-ep="'+id+'"'+
+      (dir.text?' class="edited"':'')+'>'+esc(dir.text||p.t)+'</p></div>';}).join('');
 
   var hookSet=(function(){var tn=store.tone[id]||{};
     var h=(tn.hook===null||tn.hook===undefined)?((D.defaults||{}).hook):tn.hook;
@@ -425,6 +442,40 @@ function renderBgs(){
 }
 function renderAll(){renderEps();renderRen();renderBgs();foot();}
 
+// Seeded from real runs on this machine: the package pass took 30s, a render of a 9:20
+// episode took 7.4 minutes. Render scales with runtime, the text passes do not. Actual
+// durations are recorded as jobs finish and fold into a running mean, so these improve.
+var ESTSEED={script:1.0,hooks:0.5,package:0.6,render:0.80};
+function estMin(kind,id){
+  var learned=(store.est[kind]||{}).mean;
+  var base=(learned!=null)?learned:ESTSEED[kind];
+  if(kind==='render'){
+    var sc=script((D.episodes.filter(function(x){return x.id===id;})[0]||{}).script);
+    var runMin=sc?(sc.words/WPM):9.3;
+    return base*runMin;                       // minutes of compute per minute of episode
+  }
+  return base;
+}
+function fmtEst(mins){
+  if(!(mins>0))return '';
+  if(mins<1)return 'about '+Math.max(10,Math.round(mins*60/10)*10)+'s';
+  return 'about '+(mins<10?mins.toFixed(mins<3?1:0):Math.round(mins))+' min';
+}
+function learn(kind,job){
+  if(!job||!job.at||!job.doneAt)return;
+  var mins=(new Date(job.doneAt)-new Date(job.at))/60000;
+  if(!(mins>0)||mins>180)return;
+  if(kind==='render'){
+    var sc=script((D.episodes[0]||{}).script);
+    mins=mins/((sc?sc.words/WPM:9.3)||1);
+  }
+  var cur=store.est[kind]||{mean:null,n:0};
+  var n=(cur.n||0)+1;
+  cur.mean=(cur.mean==null)?mins:(cur.mean*(n-1)+mins)/n;
+  cur.n=n; store.est[kind]=cur;
+  if(DB)DB.doc('estimates/'+kind).set(cur).catch(function(){});
+  else lsSet('omd:est:'+kind,cur);
+}
 var JOBSTEPS={
   script:['queued','brief','drafting','length check','ready'],
   hooks:['queued','script read','ten variations','ready'],
@@ -442,7 +493,8 @@ function stepList(kind,job,title){
       return '<li data-s="'+st+'"><span class="dot"></span><span>'+esc(n)+'</span></li>';
     }).join('')+'</ul>'+
     (failed?'<p class="rule" style="color:var(--stop)">failed: '+esc(job.error||'unknown')+'</p>'
-           :'<p class="rule">runs on Gemini \u2014 this page shows the state as it advances</p>')+
+           :'<p class="rule">'+esc(fmtEst(estMin(kind,job&&job.episode)))+
+            ' \u00b7 runs on Gemini, this page follows the state</p>')+
     (job&&job.text?'<div class="pkbox" style="margin-top:10px">'+esc(job.text)+'</div>':'')+
   '</div>';
 }
@@ -482,6 +534,7 @@ function startJob(kind,id,btn,mountId,title){
   try{
     DB.doc('jobs/'+key).onSnapshot(function(j){
       if(!j)return; store.jobs[key]=j;
+      if(j.state==='done')learn(kind,j);
       paintBtn(document.querySelector('[data-job="'+key+'"]'),kind,j);
       var mt=mountId?document.getElementById(mountId):null;
       if(mt)mt.innerHTML=stepList(kind,j,title);
@@ -616,6 +669,27 @@ document.addEventListener('click',async function(ev){
     c.toBlob(async function(b){if(DL)await DL.save({filename:'orpheus-thumbnail.png',data:b});
       else{var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='orpheus-thumbnail.png';a.click();}},'image/png');return;}
 });
+document.addEventListener('focusout',function(ev){
+  var kind=ev.target.getAttribute&&ev.target.getAttribute('data-edit');
+  if(!kind)return;
+  var epi=ev.target.dataset.ep, val=ev.target.textContent;
+  var cur=store.tone[epi]||{}; cur.edits=cur.edits||{};
+  if(kind==='para'){
+    cur.paras=cur.paras||{}; var i=ev.target.dataset.i;
+    cur.paras[i]=cur.paras[i]||{};
+    // Only keep an override when it actually differs from the generated line.
+    var sc2=script((D.episodes.filter(function(x){return x.id===epi;})[0]||{}).script);
+    var orig=sc2&&sc2.paras[i]?sc2.paras[i].t:'';
+    if(val.trim()===orig.trim()){delete cur.paras[i].text; ev.target.classList.remove('edited');}
+    else {cur.paras[i].text=val; ev.target.classList.add('edited');}
+  } else if(kind==='title'){
+    cur.edits.titles=cur.edits.titles||{};
+    cur.edits.titles[ev.target.dataset.i]=val;
+  } else cur.edits[kind]=val;
+  cur.saved=new Date().toLocaleString();
+  save('tone',epi,cur);
+  return;
+});
 document.addEventListener('input',function(ev){
   if(ev.target.id==='bgQ'){store.bgQuery=ev.target.value;store.bgFocus=true;renderBgs();store.bgFocus=false;}
 });
@@ -636,13 +710,13 @@ document.addEventListener('change',function(ev){
 });
 D.episodes.forEach(function(e){store.tone[e.id]=lsGet('omd:tone:'+e.id,{});store.pack[e.id]=lsGet('omd:pack:'+e.id,null);store.stage[e.id]=lsGet('omd:stage:'+e.id,{});});
 D.backgrounds.forEach(function(b){store.bg[b.id]=lsGet('omd:bg:'+b.id,{});});
-store.queue=lsGet('omd:queue',[]);store.thumbBg=lsGet('omd:thumbBg',null);store.bgSort=lsGet('omd:bgSort','screen');store.bgDir=lsGet('omd:bgDir','desc');store.pose=lsGet('omd:pose',null);store.bgQuery='';
+store.queue=lsGet('omd:queue',[]);store.thumbBg=lsGet('omd:thumbBg',null);store.bgSort=lsGet('omd:bgSort','screen');store.bgDir=lsGet('omd:bgDir','desc');store.pose=lsGet('omd:pose',null);['script','hooks','package','render'].forEach(function(k){store.est[k]=lsGet('omd:est:'+k,null)||undefined;});store.bgQuery='';
 renderAll();
 if(window.claude&&window.claude.use){
   window.claude.use('db').then(function(db){if(!db)return;DB=db;
     var jobs=D.episodes.map(function(e){return db.doc('episodes/'+e.id).get().then(function(d){if(d&&!store.dirty['tone:'+e.id])store.tone[e.id]=d;}).catch(function(){});})
       .concat(D.episodes.map(function(e){return db.doc('packages/'+e.id).get().then(function(d){if(d&&!store.dirty['pack:'+e.id])store.pack[e.id]=d;}).catch(function(){});}))
-      .concat(D.episodes.map(function(e){return db.doc('stages/'+e.id).get().then(function(d){if(d&&!store.dirty['stage:'+e.id])store.stage[e.id]=d;}).catch(function(){});})).concat(D.backgrounds.map(function(b){return db.doc('backgrounds/'+b.id).get().then(function(d){if(d&&!store.dirty['bg:'+b.id])store.bg[b.id]=d;}).catch(function(){});}));
+      .concat(D.episodes.map(function(e){return db.doc('stages/'+e.id).get().then(function(d){if(d&&!store.dirty['stage:'+e.id])store.stage[e.id]=d;}).catch(function(){});})).concat(['script','hooks','package','render'].map(function(k){return db.doc('estimates/'+k).get().then(function(d){if(d)store.est[k]=d;}).catch(function(){});})).concat(D.backgrounds.map(function(b){return db.doc('backgrounds/'+b.id).get().then(function(d){if(d&&!store.dirty['bg:'+b.id])store.bg[b.id]=d;}).catch(function(){});}));
     Promise.all(jobs).then(renderAll);}).catch(function(){});
   window.claude.use('downloads').then(function(d){DL=d;}).catch(function(){});
 }

@@ -453,11 +453,11 @@ export function buildWear(kind, vrm, colors) {
 
     const sh = M.leg - 0.05 + M.hipsToSpine;
     const skirt = new THREE.Mesh(lathe([
-      [0.86, 0], [1.02, -0.14], [1.34, -0.45], [1.72, -0.80], [1.92, -1.0],
+      [0.84, 0], [0.98, -0.14], [1.22, -0.45], [1.52, -0.80], [1.68, -1.0],
     ], M.girth, sh), mat(colors.wear));
     g.add(skirt);
     const hem = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.93, M.girth * 1.99, sh * 0.05, 30, 1, true), mat(colors.trim));
+      new THREE.CylinderGeometry(M.girth * 1.69, M.girth * 1.75, sh * 0.05, 30, 1, true), mat(colors.trim));
     hem.position.y = -sh / 2 + sh * 0.025;
     g.add(hem);
     hang('hips', g, below(M.hipsToSpine + 0.06, sh), 0.045);
@@ -466,21 +466,24 @@ export function buildWear(kind, vrm, colors) {
     // robe below the shoulder gets past them: at a medium shot the arms are half of what
     // the eye reads. A sleeve down each arm segment is the single piece that does most of
     // the work of making her look dressed for a story rather than for a stage.
+    //
+    // Aimed down the raw bone at its child, the way the armbands are. The normalized rig's
+    // limbs do NOT run along a predictable local axis the way its spine does — assuming
+    // they ran down -Y left both sleeves bunched at the shoulder.
     for (const side of ['left', 'right']) {
       for (const [seg, child, r0, r1] of [
-        ['UpperArm', 'LowerArm', 0.055, 0.048],
-        ['LowerArm', 'Hand', 0.048, 0.058],
+        ['UpperArm', 'LowerArm', 0.058, 0.050],
+        ['LowerArm', 'Hand', 0.050, 0.062],
       ]) {
-        const armRaw = raw(side + seg), armNorm = bone(side + seg);
-        const kid = raw(side + child);
-        if (!armRaw || !armNorm || !kid) continue;
+        const arm = raw(side + seg), kid = raw(side + child);
+        if (!arm || !kid) continue;
+        const dir = kid.position.clone().normalize();
         const len = kid.position.length();
         const tube = new THREE.Mesh(
-          new THREE.CylinderGeometry(r0, r1, len * 1.02, 18, 1, true), mat(colors.wear));
-        // The normalized rig points a limb down its own -Y, so a tube built on +Y only has
-        // to be flipped, not aimed at the child the way the raw rig needs.
-        tube.position.y = -len * 0.5;
-        fit(armNorm, tube);
+          new THREE.CylinderGeometry(r0, r1, len * 1.04, 18, 1, true), mat(colors.wear));
+        tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        tube.position.copy(dir).multiplyScalar(len * 0.5);
+        fit(arm, tube);
         g.userData.detached = true;
       }
     }
