@@ -1,0 +1,25 @@
+/node_modules
+
+# Third-party assets are fetched, never committed. See NOTICE.md — the VRM and the Mixamo
+# clips are licensed for use, not for redistribution.
+/assets/*
+!/assets/.gitkeep
+!/assets/anim
+/assets/anim/*
+!/assets/anim/.gitkeep
+stage/token.txt
+
+# Generated and rendered output
+episode/audio/
+episode/backdrops/
+episode/out/
+episode/shots.json
+stage/frames/
+stage/looks/
+stage/moods/
+*.mp4
+*.mov
+
+.DS_Store
+stage/selftest.png
+stage/pose-*.png

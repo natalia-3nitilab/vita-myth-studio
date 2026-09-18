@@ -1,0 +1,686 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;padding:0;overflow:hidden;background:#000}canvas{display:block}
+</style></head><body>
+<script type="importmap">{"imports":{
+  "three":"../node_modules/three/build/three.module.js",
+  "three/addons/":"../node_modules/three/examples/jsm/",
+  "@pixiv/three-vrm":"../node_modules/@pixiv/three-vrm/lib/three-vrm.module.js"
+}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import { mixamoToVRMClip } from './retarget.mjs';
+import * as P from './props.mjs';
+import { LOOKS, byId, tattooTexture, buildWear } from './looks.mjs';
+
+const q = new URLSearchParams(location.search);
+const W = +(q.get('w') || 1920), H = +(q.get('h') || 1080);
+// Character: a Mixamo .fbx download, or any VRM. Both play the same Mixamo clips.
+const CHAR = q.get('char') || '../assets/fem_vroid.vrm';
+const STATUS = window.STATUS = { char: CHAR, clips: [], errors: [] };
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+// Shadows are what actually put a character on a floor. They are deterministic, so they
+// cost nothing in a frame-by-frame capture.
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.01, 100);
+
+// Same flat two-tone backdrop as the primitive stage: illustration, not a photographed room.
+const bg = new THREE.Mesh(new THREE.PlaneGeometry(60, 34), new THREE.ShaderMaterial({
+  uniforms: { a: { value: new THREE.Color('#cfe3e6') }, b: { value: new THREE.Color('#f3e7d3') } },
+  vertexShader: 'varying vec2 v; void main(){v=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader: 'uniform vec3 a,b; varying vec2 v; void main(){gl_FragColor=vec4(mix(b,a,v.y),1.);}',
+  depthWrite: false,
+}));
+bg.position.z = -14; scene.add(bg);
+bg.renderOrder = -10;
+const gradientMat = bg.material;
+const BG_DIST = 14;
+const texLoader = new THREE.TextureLoader();
+const backdropTex = {};          // mood -> texture, when an image exists for it
+let backdropOn = false;
+
+/** Try to load a generated backdrop for each mood. Missing ones fall back to the gradient. */
+async function loadBackdrops(dir, moods) {
+  await Promise.all(moods.map(m => new Promise((res) => {
+    texLoader.load(`${dir}/${m}.png`,
+      (t) => { t.colorSpace = THREE.SRGBColorSpace; backdropTex[m] = t; res(); },
+      undefined, () => res());
+  })));
+  STATUS.backdrops = Object.keys(backdropTex);
+}
+
+/**
+ * Billboard the backdrop to exactly fill the frustum at BG_DIST. A fixed-size plane shows
+ * a different crop of the image at every focal distance, so the same background drifts
+ * shot to shot for no reason the viewer can name.
+ */
+const _fwd = new THREE.Vector3();
+const _head = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const _fwd2 = new THREE.Vector3();
+const _side = new THREE.Vector3();
+function fitBackdrop() {
+  const h = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * BG_DIST;
+  bg.scale.set((h * camera.aspect) / 60, h / 34, 1);
+  camera.getWorldDirection(_fwd);
+  bg.position.copy(camera.position).addScaledVector(_fwd, BG_DIST);
+  bg.quaternion.copy(camera.quaternion);
+}
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+const key = new THREE.DirectionalLight(0xfff2dd, 1.5); key.position.set(4, 7, 6); scene.add(key);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6, near: 0.5, far: 30 });
+key.shadow.bias = -0.0009;
+const rim = new THREE.DirectionalLight(0xbfd8ff, 0.7); rim.position.set(-6, 3, -4); scene.add(rim);
+
+// ---------------------------------------------------------------- house cel-shading
+// Three tones, hard steps. RGBAFormat, not RGBFormat — the three-channel constant was
+// removed from three.js and the texture silently produces no banding at all, which is the
+// entire look. Same bug the primitive stage hit.
+const ramp = new THREE.DataTexture(
+  new Uint8Array([110,110,110,255, 200,200,200,255, 255,255,255,255]), 3, 1, THREE.RGBAFormat);
+ramp.needsUpdate = true; ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
+
+// Props are built from new geometry rather than rewritten from a loaded model, so they need
+// a plain material factory. Same ramp as the character, so the set and the figure band
+// identically — different ramps on the two is instantly visible as a compositing seam.
+const toon = (hex) => new THREE.MeshToonMaterial({ color: hex, gradientMap: ramp });
+
+// Inverted hull on a *skinned* mesh cannot be a scaled copy — skinning overwrites the
+// vertex positions and the outline detaches from the body. It has to be pushed along the
+// post-skinning normal in the vertex shader instead.
+function outlineMaterial(thickness) {
+  const m = new THREE.MeshBasicMaterial({ color: '#15161c', side: THREE.BackSide });
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.outlineThickness = { value: thickness };
+    // three only declares objectNormal in the basic-material vertex shader when skinning or
+    // an envmap is in play. On a plain prop it does not exist and the shader fails to link,
+    // so fall back to the raw attribute — for unskinned geometry they are the same thing.
+    shader.vertexShader = 'uniform float outlineThickness;\n' + shader.vertexShader
+      .replace('#include <project_vertex>',
+        '#ifdef USE_SKINNING\n  transformed += objectNormal * outlineThickness;\n' +
+        '#else\n  transformed += normal * outlineThickness;\n#endif\n#include <project_vertex>');
+  };
+  m.customProgramCacheKey = () => 'outline' + thickness;
+  return m;
+}
+
+function toonify(root, { outline = 0.012 } = {}) {
+  const adds = [];
+  root.traverse((o) => {
+    if (!o.isMesh && !o.isSkinnedMesh) return;
+    const src = Array.isArray(o.material) ? o.material[0] : o.material;
+    o.material = new THREE.MeshToonMaterial({
+      color: src?.color ?? new THREE.Color(0xffffff),
+      map: src?.map ?? null,
+      gradientMap: ramp,
+      transparent: src?.transparent ?? false,
+      alphaTest: src?.alphaTest ?? 0,
+      side: src?.side ?? THREE.FrontSide,
+    });
+    if (!outline) return;
+    const mat = outlineMaterial(outline);
+    let o2;
+    if (o.isSkinnedMesh) {
+      o2 = new THREE.SkinnedMesh(o.geometry, mat);
+      o2.bindMode = o.bindMode;
+      o2.bind(o.skeleton, o.bindMatrix);
+    } else {
+      o2 = new THREE.Mesh(o.geometry, mat);
+    }
+    o2.position.copy(o.position); o2.quaternion.copy(o.quaternion); o2.scale.copy(o.scale);
+    o2.frustumCulled = false; o2.renderOrder = -1;
+    adds.push([o.parent, o2]);
+  });
+  adds.forEach(([p, o2]) => p.add(o2));
+}
+
+// ---------------------------------------------------------------- moods
+/**
+ * A mood is the backdrop gradient, the floor tone and the three lights. Ten minutes of one
+ * lighting state is what makes a talking-head render feel like a screensaver, and changing
+ * it per section costs nothing — no geometry, no extra render time.
+ */
+const MOODS = {
+  dawn:    { a:'#cfe3e6', b:'#f7e6c8', floor:'#e3d3b2', amb:0.64, key:'#fff2dd', ki:1.5, rim:'#bfd8ff', ri:0.7 },
+  grove:   { a:'#bcd9c0', b:'#eef0d2', floor:'#cfd6ab', amb:0.66, key:'#f4ffe6', ki:1.4, rim:'#9fd0a8', ri:0.6 },
+  dusk:    { a:'#6b5a86', b:'#e7a98c', floor:'#9b7f84', amb:0.52, key:'#ffc9a0', ki:1.3, rim:'#8f7ad0', ri:0.8 },
+  descent: { a:'#1d2340', b:'#3b4a72', floor:'#39405e', amb:0.40, key:'#8fa4d8', ki:1.0, rim:'#5566a8', ri:0.7 },
+  under:   { a:'#25101a', b:'#5e2020', floor:'#3a1c1c', amb:0.34, key:'#ff8a6a', ki:1.1, rim:'#a02c3c', ri:0.9 },
+  throne:  { a:'#2a1533', b:'#7a3f6e', floor:'#4a2a4e', amb:0.44, key:'#ffd9a0', ki:1.2, rim:'#b06ad0', ri:0.9 },
+  climb:   { a:'#2b3242', b:'#7c8496', floor:'#5c6270', amb:0.46, key:'#cfd8e6', ki:1.2, rim:'#7a88a8', ri:0.6 },
+  light:   { a:'#9fd0e8', b:'#fff4d8', floor:'#f0e2bc', amb:0.78, key:'#fffaf0', ki:1.8, rim:'#cfe6ff', ri:0.7 },
+  cold:    { a:'#5a6a78', b:'#aebcc4', floor:'#8e9aa2', amb:0.50, key:'#dce8f0', ki:1.1, rim:'#6f8496', ri:0.6 },
+  night:   { a:'#0d1230', b:'#26305c', floor:'#252c4a', amb:0.36, key:'#b8c8ff', ki:0.9, rim:'#4a5a9c', ri:0.8 },
+  reflect: { a:'#c8d6da', b:'#f2e8d6', floor:'#ded0b6', amb:0.62, key:'#fff2dd', ki:1.4, rim:'#bfd8ff', ri:0.6 },
+};
+let activeMood = null;
+function applyMood(name) {
+  const m = MOODS[name] || MOODS.reflect;
+  const tex = backdropTex[name];
+  // Swap between the painted backdrop and the flat gradient. The lights still follow the
+  // mood either way, so the character is lit to match whatever is behind her.
+  if (tex && !(bg.material.map === tex)) {
+    bg.material = new THREE.MeshBasicMaterial({ map: tex, depthWrite: false, toneMapped: false });
+    backdropOn = true;
+  } else if (!tex && bg.material !== gradientMat) {
+    bg.material = gradientMat; backdropOn = false;
+  }
+  if (m === activeMood) return;
+  activeMood = m;
+  if (!tex) { gradientMat.uniforms.a.value.set(m.a); gradientMat.uniforms.b.value.set(m.b); }
+  scene.children.forEach(o => { if (o.isAmbientLight) o.intensity = m.amb; });
+  key.color.set(m.key); key.intensity = m.ki;
+  rim.color.set(m.rim); rim.intensity = m.ri;
+  if (PROPS.floor) PROPS.floor.children.forEach(c => c.material?.color?.set(m.floor));
+}
+window.MOODS = () => Object.keys(MOODS);
+
+// ---------------------------------------------------------------- looks
+let wearRoot = null, tattooMesh = null;
+
+/**
+ * A "look" is a palette over the VRoid material names plus geometry added to the skeleton.
+ * The garments themselves are baked into the VRM mesh and cannot be swapped — a genuinely
+ * new outfit is a VRoid Studio job. This changes colour and silhouette, which is most of
+ * what reads at this shot length.
+ */
+function applyLook(look) {
+  if (!vrm) return;
+  const hit = (m, s) => (m.name || '').includes(s);
+
+  vrm.scene.traverse((o) => {
+    if (!o.isMesh && !o.isSkinnedMesh) return;
+    for (const m of [].concat(o.material)) {
+      // Outline materials carry the ink line. Tint them and the linework changes colour.
+      if (!m.color || (m.name || '').includes('Outline')) continue;
+      let c = null;
+      if (hit(m, '_HAIR')) c = look.hair;
+      else if (hit(m, 'Tops') || hit(m, 'Onepiece') || hit(m, 'Bottoms')) c = look.tops;
+      else if (hit(m, 'Shoes')) c = look.shoes;
+      else if (hit(m, 'EyeIris')) c = look.iris;
+      if (!c) continue;
+      m.color.set(c);
+      // MToon's shade colour is the banded side. Left alone it keeps the old hue and the
+      // recolour only half lands.
+      if (m.shadeColor) m.shadeColor.set(c).multiplyScalar(0.62);
+    }
+  });
+
+  // --- garments -----------------------------------------------------------------
+  if (wearRoot) { wearRoot.removeFromParent(); }
+  vrm.scene.traverse(o => { if (o.userData.__wear) o.removeFromParent(); });
+  wearRoot = new THREE.Group(); wearRoot.userData.__wear = true;
+  const colors = { wear: look.wearColor, trim: look.trim, ramp, scale: HEAD / 1.45 };
+  for (const kind of look.wear || []) {
+    const g = buildWear(kind, vrm, colors);
+    g.userData.__wear = true;
+    g.traverse(o => { o.userData.__wear = true; if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  }
+
+  // --- tattoo -------------------------------------------------------------------
+  if (tattooMesh) tattooMesh.removeFromParent();
+  // Upper arm, not lower: most VRoid outfits put gloves or gauntlets on the forearm, so a
+  // forearm tattoo is invisible on exactly the characters worth using.
+  const arm = vrm.humanoid.getRawBoneNode('leftUpperArm');
+  const hand = vrm.humanoid.getRawBoneNode('leftLowerArm');
+  // Tattoos are off. They read as decals on a cel-shaded body rather than as ink, and the
+  // motifs fight the markings some VRoid outfits already carry. ?tattoo=1 brings them back.
+  if (arm && hand && look.tattoo && q.get('tattoo') === '1') {
+    const dir = hand.position.clone().normalize();
+    const len = hand.position.length();
+    // A sleeve just proud of the skin. Wrapping the arm this way needs no knowledge of the
+    // body atlas's UV layout, which differs between VRoid versions.
+    // Bone-local space again: a VRM's bones are not unit-scaled, so undo the parent's world
+    // scale or the sleeve is metres wide on some models and millimetres on others.
+    const _ws = new THREE.Vector3(); arm.getWorldScale(_ws);
+    const boneK = Math.abs(_ws.x) > 1e-6 ? 1 / _ws.x : 1;
+    const geo = new THREE.CylinderGeometry(0.052 * (HEAD / 1.45) * boneK, 0.046 * (HEAD / 1.45) * boneK,
+                                           len * 0.62, 24, 1, true);
+    const tex = tattooTexture(look.tattoo.motif).clone();
+    tex.needsUpdate = true;
+    // Magnify the motif. At repeat 1 the whole 512px design wraps a 10cm sleeve and the
+    // glyphs come out a couple of pixels wide — present in the scene, invisible on screen.
+    tex.repeat.set(1, 0.42);
+    tex.offset.set(0, 0.22);
+    tattooMesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      map: tex, transparent: true, alphaTest: 0.30, side: THREE.DoubleSide, toneMapped: false,
+      color: new THREE.Color(look.tattoo.color).multiplyScalar(look.tattoo.glow ?? 1),
+    }));
+    tattooMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    tattooMesh.position.copy(dir).multiplyScalar(len * 0.52);
+    tattooMesh.frustumCulled = false;
+    arm.add(tattooMesh);
+  }
+  STATUS.look = look.id;
+}
+
+window.LOOKS = LOOKS.map(l => l.id);
+window.setLook = (id) => applyLook(byId(id));
+
+// ---------------------------------------------------------------- set dressing
+const mk = { toon, outline: outlineMaterial };
+const PROPS = {};
+let SEAT_H = 0.45;                       // replaced by a measurement off the sitting clip
+
+/**
+ * A soft ellipse under her feet. With a photographic backdrop there is no 3D floor to catch
+ * a real shadow, and an ungrounded character reads as a sticker pasted on the image.
+ */
+function makeContactShadow() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 4, 64, 64, 62);
+  grd.addColorStop(0, 'rgba(0,0,0,0.55)');
+  grd.addColorStop(0.55, 'rgba(0,0,0,0.22)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
+    map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false,
+  }));
+  m.rotation.x = -Math.PI / 2;
+  const g2 = new THREE.Group(); g2.add(m);
+  return g2;
+}
+
+function buildProps() {
+  // Furniture is sized in head heights for the same reason the cameras are: a 2m sofa is
+  // correct next to a 1.75m adult and enormous next to a chibi VRoid. S is the character's
+  // build relative to an average adult. Seat heights are the exception — they come from
+  // the animation, not from S, because they have to meet the clip exactly.
+  const S = HEAD / 1.45;
+  const wallZ = -1.9 * S;
+
+  PROPS.floor      = P.makeFloor(mk);
+  PROPS.wall       = P.makeWall(mk, { width: 14 * S, height: 3.2 * S, z: wallZ });
+  PROPS.wallDoor   = P.makeWall(mk, { width: 14 * S, height: 3.2 * S, z: wallZ,
+                                      opening: [-1.1 * S, 0, 1.16 * S, 2.18 * S] });
+  PROPS.wallWindow = P.makeWall(mk, { width: 14 * S, height: 3.2 * S, z: wallZ,
+                                      opening: [1.3 * S, 1.0 * S, 1.54 * S, 1.34 * S] });
+  PROPS.doorway    = P.makeDoor(mk, { x: -1.1 * S, z: wallZ, w: 1.0 * S, h: 2.1 * S });
+  PROPS.window     = P.makeWindow(mk, { x: 1.3 * S, z: wallZ, w: 1.4 * S, h: 1.2 * S, sill: 1.0 * S });
+  PROPS.sofa       = P.makeSofa(mk,  { seatH: SEAT_H, w: 1.9 * S, d: 0.86 * S });
+  PROPS.chair      = P.makeChair(mk, { seatH: SEAT_H, w: 0.48 * S, d: 0.48 * S });
+  PROPS.table      = P.makeTable(mk, { h: 0.50 * S, w: 0.58 * S, d: 0.50 * S });
+  PROPS.desk       = P.makeDesk(mk,  { h: 0.72 * S, w: 1.45 * S, d: 0.66 * S });
+  PROPS.lamp       = P.makeLamp(mk,  { h: 0.42 * S });
+  PROPS.columns    = P.makeColumns(mk, { spacing: 1.5 * S, h: 3.0 * S, r: 0.17 * S, z: -3.0 * S });
+  PROPS.arch       = P.makeArch(mk,   { w: 2.4 * S, h: 3.0 * S, z: -3.2 * S });
+  PROPS.stars      = P.makeStars(mk);
+  PROPS.contact    = makeContactShadow();
+  PROPS.contact.scale.setScalar(0.62 * S);
+  PROPS.contact.position.y = 0.01;
+
+  // Staging: the character sits at the origin facing camera, so the sofa is centred on her
+  // and everything else is pushed clear of her silhouette.
+  PROPS.sofa.position.set(0, 0, -0.26 * S);
+  PROPS.chair.position.set(0, 0, -0.24 * S);
+  PROPS.table.position.set(1.05 * S, 0, -0.24 * S);
+  // The desk goes between the camera and the character, not behind her — she works at it.
+  PROPS.desk.position.set(0, 0, 0.34 * S);
+  PROPS.lamp.position.set(1.05 * S, 0.50 * S, -0.24 * S);
+  for (const g of Object.values(PROPS)) { g.visible = false; scene.add(g); }
+}
+
+/** Show exactly the props named by a set, hide the rest. */
+function applySet(name, clipSlug) {
+  const want = new Set(P.SETS[name] ?? P.SETS.bare);
+  for (const [k, g] of Object.entries(PROPS)) g.visible = want.has(k);
+  // Mixamo's sitting clips keep the character at the origin, so a sofa positioned to be sat
+  // on is a sofa she stands inside of on every standing shot. Push it back when she is up.
+  const seated = /^sitting/.test(clipSlug || '');
+  const S = HEAD / 1.45;
+  if (PROPS.sofa)  PROPS.sofa.position.z  = (seated ? -0.26 : -1.05) * S;
+  if (PROPS.chair) PROPS.chair.position.z = (seated ? -0.06 : -1.00) * S;
+}
+
+/**
+ * Find a bone by its Mixamo name, with or without the `mixamorig:` prefix — the prefix
+ * survives some export paths and not others, and a persona that poses by bone name breaks
+ * silently (every rotation lands on nothing) when it guesses wrong.
+ */
+function findBone(name) {
+  if (!root) return null;
+  const want = name.toLowerCase();
+  let hit = null;
+  root.traverse((o) => {
+    if (hit || !o.isBone) return;
+    const n = o.name.toLowerCase().replace(/^mixamorig\d*:?/, '');
+    if (n === want) hit = o;
+  });
+  return hit;
+}
+window.__findBone = findBone;
+
+/**
+ * Where is the seat? Mixamo's sitting clips carry an absolute hip height that assumes a
+ * chair, so the furniture has to be built to the animation rather than the other way round
+ * — otherwise the character hovers above the cushion or sinks through it.
+ */
+function measureSeatHeight() {
+  const slug = clips['sitting-talk'] ? 'sitting-talk' : (clips['sitting'] ? 'sitting' : null);
+  if (!slug || !mixer) return SEAT_H;
+  const a = mixer.clipAction(clips[slug]);
+  a.reset().play();
+  mixer.setTime(clips[slug].duration * 0.5);
+  let hipsY;
+  if (vrm) {
+    vrm.update(0);
+    hipsY = vrm.humanoid.getNormalizedBoneNode('hips').getWorldPosition(new THREE.Vector3()).y;
+  } else {
+    // A Mixamo body has no humanoid abstraction — the mixamorig skeleton is the rig, and
+    // the mixer has already posed it, so the hip bone can be read straight off the graph.
+    root.updateMatrixWorld(true);
+    hipsY = (findBone('Hips')?.getWorldPosition(new THREE.Vector3())?.y) ?? SEAT_H;
+  }
+  a.stop(); mixer.setTime(0); activeSlug = null; action = null;
+  // The hip joint sits inside the pelvis, above the surface being sat on.
+  return hipsY - (+(q.get('seatdrop') ?? 0.10));
+}
+
+// ---------------------------------------------------------------- character + clips
+const gltf = new GLTFLoader(); gltf.register((p) => new VRMLoaderPlugin(p));
+const fbx = new FBXLoader();
+
+let vrm = null, root = null, mixer = null;
+const clips = {};   // slug -> AnimationClip bound to this character
+let action = null, activeSlug = null;
+
+async function loadCharacter() {
+  if (CHAR.endsWith('.vrm')) {
+    const g = await gltf.loadAsync(CHAR);
+    vrm = g.userData.vrm;
+    // These two are load-time optimisations. combineSkeletons rebuilds skinned meshes, and
+    // an expression's morph-target binds still point at the originals — so the visemes stop
+    // reaching the face while still reporting the right weights. ?clean=1 to re-enable.
+    if (q.get('clean') === '1') {
+      VRMUtils.removeUnnecessaryVertices(g.scene);
+      VRMUtils.combineSkeletons(g.scene);
+    }
+    // VRM 0.x is authored facing +Z and has to be spun 180° to match VRM 1.0, or the
+    // camera looks at the back of the character's head. This is the same versioning split
+    // that the retarget compensates for by negating X and Z on every VRM0 keyframe —
+    // the two have to agree or the animation comes out mirrored.
+    VRMUtils.rotateVRM0(vrm);
+    STATUS.vrm = vrm.meta?.metaVersion === '0' ? 'VRM 0.x (rotated)' : 'VRM 1.0';
+    // Springbones stay loaded but never integrate: every vrm.update() below is passed a
+    // delta of 0. Hair and skirt hold their rest shape, which is what a deterministic
+    // frame-by-frame capture needs — a stateful solver would make frame N depend on how
+    // the render got there.
+    vrm.scene.traverse((o) => {
+      o.frustumCulled = false;
+      if (o.isMesh || o.isSkinnedMesh) { o.castShadow = true; o.receiveShadow = true; }
+    });
+    // 0.012 is right for the primitive mascot, whose parts are chunky. On a VRM it is
+    // thicker than the face geometry and the hull erupts through the nose and mouth as
+    // black shards. A VRM needs roughly a quarter of that.
+    if (q.get('toon') === 'house') toonify(vrm.scene, { outline: +(q.get('outline') ?? 0.003) });
+    root = vrm.scene;
+    window.__vrm = vrm;
+    // Frame against the model's actual top, not the head BONE. The bone sits inside the
+    // skull; hair, and on this character a pair of horn-like accents, stand well above it,
+    // so framings derived from the bone crop the top of her head off.
+    const box = new THREE.Box3().setFromObject(vrm.scene);
+    const boneY = vrm.humanoid.getNormalizedBoneNode('head').getWorldPosition(new THREE.Vector3()).y;
+    if (box.max.y > 0.4) HEAD = box.max.y;
+    STATUS.headHeight = +HEAD.toFixed(3);
+    STATUS.headBoneY = +boneY.toFixed(3);
+  } else {
+    root = await fbx.loadAsync(CHAR);
+    // Mixamo ships characters in centimetres; the scene is in metres.
+    root.scale.setScalar(0.01);
+    root.traverse((o) => {
+      o.frustumCulled = false;
+      if (o.isMesh || o.isSkinnedMesh) { o.castShadow = true; o.receiveShadow = true; }
+      // Mixamo stamps a per-export namespace onto every bone — this body came back as
+      // `mixamorig6Hips`, while a clip exported on its own is `mixamorigHips`. Tracks bind
+      // by name, so a mismatched number is not an error: every track silently binds to
+      // nothing and the character stands in its T-pose for the whole render.
+      if (o.isBone) o.name = o.name.replace(/^mixamorig\d+/, 'mixamorig');
+    });
+    // Mixamo's skinned export carries every bone twice: the real one, and a leaf duplicate
+    // of the same name parented directly underneath it. Which of the pair a mesh is skinned
+    // to varies per mesh — on this body the skin and sneakers use the real bones and the
+    // shirt and trousers use the duplicates. A clip binds by name to the first of the pair,
+    // so the duplicates inherit that rotation and then apply it again: the body moves once
+    // and her clothes move twice, which reads as a badly broken rig rather than as a
+    // binding bug. Repoint every skeleton at the real bone.
+    let repointed = 0;
+    root.traverse((o) => {
+      if (!o.isSkinnedMesh) return;
+      const bones = o.skeleton.bones.map((b) => {
+        const dup = b.parent?.isBone && b.parent.name === b.name && b.children.length === 0;
+        if (dup) repointed++;
+        return dup ? b.parent : b;
+      });
+      if (!repointed) return;
+      o.bind(new THREE.Skeleton(bones, o.skeleton.boneInverses), o.bindMatrix);
+    });
+    STATUS.repointedBones = repointed;
+
+    // Toon is opt-in here, as it is for a VRM. A Mixamo body is realistically proportioned
+    // and textured, and the three-step ramp plus an ink line turns it back into a cartoon —
+    // which is the one thing a non-anime presenter is for. ?toon=house forces it anyway.
+    if (q.get('toon') === 'house') toonify(root, { outline: +(q.get('outline') ?? 1.2) });
+    // Same measurement as the VRM path: every camera number is a multiple of HEAD, so a
+    // body that is never measured gets framed as if it were 1.45m tall.
+    root.updateMatrixWorld(true);
+    const fbox = new THREE.Box3().setFromObject(root);
+    if (fbox.max.y > 0.4) HEAD = fbox.max.y;
+    STATUS.headHeight = +HEAD.toFixed(3);
+  }
+  window.__root = root;
+  scene.add(root);
+  mixer = new THREE.AnimationMixer(vrm ? vrm.scene : root);
+}
+
+/**
+ * Bind a Mixamo clip to a Mixamo body, which is not the no-op the skeleton name suggests.
+ *
+ * Two things have to be fixed. The namespace number in `mixamorig6Hips` belongs to the
+ * CHARACTER the clip was exported against, so a clip exported on one body and a body
+ * exported on its own do not share a single track name and every curve binds to nothing —
+ * the character stands in its T-pose for the whole render and no error is raised. Both
+ * sides are normalised to a bare `mixamorig` here and at load.
+ *
+ * And the clip carries the hips' absolute position, in the units of that export, which
+ * walks the character out of frame on a fixed camera. Only the vertical is kept — a squat
+ * or a kneel has to be allowed to lower her — unless ?rootmotion=1 asks for the travel.
+ */
+function bindMixamoClip(asset, inPlace) {
+  const clip = (THREE.AnimationClip.findByName(asset.animations, 'mixamo.com') ?? asset.animations[0]).clone();
+  for (const t of clip.tracks) t.name = t.name.replace(/^mixamorig\d+/, 'mixamorig');
+  if (!inPlace) return clip;
+  for (const t of clip.tracks) {
+    if (!t.name.endsWith('Hips.position')) continue;
+    for (let i = 0; i < t.values.length; i += 3) { t.values[i] = 0; t.values[i + 2] = 0; }
+  }
+  return clip;
+}
+
+async function loadClips(list) {
+  // Clips are per-character, so each body keeps its own directory. ?anim= selects it.
+  const dir = q.get('anim') || '../assets/anim';
+  for (const slug of list) {
+    try {
+      const asset = await fbx.loadAsync(`${dir}/${slug}.fbx`);
+      clips[slug] = vrm
+        ? mixamoToVRMClip(asset, vrm, slug, { inPlace: q.get('rootmotion') !== '1' })
+        : bindMixamoClip(asset, q.get('rootmotion') !== '1');
+      STATUS.clips.push(slug);
+    } catch (e) {
+      STATUS.errors.push(`${slug}: ${e.message}`);
+    }
+  }
+}
+
+function play(slug) {
+  // __forceClip lets selftest.mjs pin a clip the shot list knows nothing about.
+  if (window.__forceClip) slug = window.__forceClip;
+  if (slug === activeSlug) return;
+  const clip = clips[slug] ?? clips[Object.keys(clips)[0]];
+  if (!clip) return;
+  action?.stop();
+  action = mixer.clipAction(clip);
+  action.reset().play();
+  activeSlug = slug;
+}
+
+// ---------------------------------------------------------------- shots
+// A shot is a camera, a clip and a window into that clip — all numbers. Which is the point
+// of doing this in 3D at all: the 123-shot plan becomes data instead of 123 generations.
+// Camera numbers are in HEAD HEIGHTS, not metres. VRoid characters differ by 30cm or more
+// between a chibi and an adult build, and a shot list in metres reframes itself every time
+// the character changes — the same list here fits any body.
+window.SHOTS = {
+  wide:    { cam: [0.41, 0.79, 2.83], look: [0, 0.68, 0], clip: 'idle',         push: 0.09, set: 'living' },
+  medium:  { cam: [0.34, 0.90, 1.62], look: [0, 0.86, 0], clip: 'gesture-talk', push: 0.07, set: 'bare' },
+  closeup: { cam: [0.21, 1.02, 0.79], look: [0, 1.01, 0], clip: 'thinking',     push: 0.05, set: 'none' },
+  // phone-pace turns a full circle. That is fine motion and useless to a fixed camera —
+  // half the shot is the back of her head. Pacing clips need a camera that follows.
+  phone:   { cam: [0.58, 0.82, 2.35], look: [0, 0.64, 0], clip: 'phone-talk',   push: 0.06, set: 'door' },
+  desk:    { cam: [0.62, 0.84, 2.30], look: [0, 0.58, 0], clip: 'sitting-talk', push: 0.05, set: 'desk' },
+  // Seated shots are framed chest-up on purpose. Mixamo's sitting clips assume a chair
+  // that this scene does not have, so a wide seated shot is a character floating in mid-air;
+  // and a VRM skirt is rigid, so a seated wide shot splays it open. Chest-up hides both.
+  // Now that there is a sofa under her this can open back out from the chest-up crop it
+  // needed when she was floating. The lower edge still stops at the lap — see README.
+  sofa:    { cam: [0.58, 0.78, 2.20], look: [0, 0.50, 0], clip: 'sitting-talk', push: 0.05, set: 'living' },
+};
+let HEAD = 1.45;   // measured at load; the fallback is an average adult VRoid
+
+/**
+ * Deterministic: the clip time is computed from t, never accumulated from deltas, so a
+ * frame renders identically however long the render took.
+ * @param shot key of SHOTS, or an object {cam,look,clip,push,dur,offset}
+ * @param t    0..1 through the shot
+ */
+/**
+ * Mouth and eyes. The openness comes from the narration's own amplitude envelope, so the
+ * jaw opens on vowels and closes in the gaps. Cycling the viseme stops it reading as one
+ * shape flapping — at this shot length that difference is most of the effect.
+ */
+const VISEMES = ['aa', 'ih', 'ou', 'ee', 'oh'];
+// 'ih' and 'ee' are closed-mouth shapes. Cycling all five evenly meant a loud syllable had
+// a two-in-five chance of landing on a shape that shows no opening at all, which reads as
+// a mouth that is not moving. Loudness picks the group; the cycle only picks within it.
+const OPEN = ['aa', 'oh'], MID = ['ou', 'aa', 'ee'], SHUT = ['ih', 'ee'];
+function setFace(openness, tAbs, emotion) {
+  const em = vrm?.expressionManager; if (!em) return;
+  for (const v of VISEMES) em.setValue(v, 0);
+  const o = Math.min(1, Math.max(0, openness ?? 0));
+  if (o > 0.04) {
+    const group = o > 0.62 ? OPEN : o > 0.3 ? MID : SHUT;
+    // Deterministic: frame N must give the same shape on every run.
+    const i = Math.floor(tAbs * 7.3) % group.length;
+    em.setValue(group[i], Math.min(1, 0.25 + o * 0.85));
+  }
+  // Blink roughly every four seconds, over ~120ms, and never mid-frame-dependent.
+  const cyc = (tAbs % 4.1) / 4.1;
+  em.setValue('blink', cyc > 0.965 ? Math.sin((cyc - 0.965) / 0.035 * Math.PI) : 0);
+  for (const e of ['happy', 'sad', 'angry', 'relaxed']) em.setValue(e, 0);
+  if (emotion) em.setValue(emotion.name, emotion.value ?? 0.5);
+}
+
+window.setFrame = (shot, t, opts) => {
+  const s = (typeof shot === 'object' ? shot : window.SHOTS[shot]) || window.SHOTS.medium;
+  applySet(s.set ?? 'bare', s.clip);
+  applyMood(s.mood ?? 'reflect');
+
+  if (mixer) {
+    play(s.clip ?? 'idle');
+    const clip = clips[activeSlug];
+    if (clip) {
+      // No modulo here: setTime() rewinds the action to 0 and advances it, so the action's
+      // own LoopRepeat does the wrapping. Taking the remainder first threw away the last
+      // frame of any shot exactly one clip long — it wrapped to the rest pose.
+      mixer.setTime((s.offset ?? 0) + t * (s.dur ?? clip.duration));
+    }
+  }
+  if (vrm) {
+    setFace(opts?.mouth, opts?.tAbs ?? 0, opts?.emotion);
+    vrm.update(0);             // normalised-bone -> raw-bone copy; 0 so nothing integrates
+  }
+
+  // The camera is placed AFTER the pose, not before it. A tight shot aimed at a fixed head
+  // height looks down at the crown of her head the moment a clip lowers it — "Sad Idle" and
+  // "Reacting" both do, and both were being used on close shots.
+  const k = 1 - (s.push ?? 0.07) * t;
+  if (s.track === 'head' && vrm) {
+    // A tight shot has to follow the performance, not a fixed point in the room. Mixamo's
+    // clips rotate the body — "Reacting" turns her to look right, "Sad Idle" turns away —
+    // and stripping root motion only removes translation, not rotation. Aimed at a fixed
+    // spot, these shots render the back of her head.
+    vrm.humanoid.getRawBoneNode('head').getWorldPosition(_head);
+    // Face direction comes from the hips, not the head: the camera should stay in front of
+    // her body and let her look around within the frame, rather than swinging with her neck.
+    vrm.humanoid.getRawBoneNode('hips').getWorldQuaternion(_q);
+    // -Z, not +Z: a VRM's bones are authored facing -Z in their own space, and rotateVRM0
+    // spins the whole scene rather than the bone frames. Using +Z puts the camera behind her.
+    _fwd2.set(0, 0, -1).applyQuaternion(_q); _fwd2.y = 0;
+    if (_fwd2.lengthSq() < 1e-6) _fwd2.set(0, 0, 1);
+    _fwd2.normalize();
+    _side.set(-_fwd2.z, 0, _fwd2.x);                 // right-hand perpendicular, on the floor
+    const dist = s.cam[2] * HEAD * k, lateral = s.cam[0] * HEAD * k;
+    camera.position.copy(_head)
+      .addScaledVector(_fwd2, dist)
+      .addScaledVector(_side, lateral);
+    // Sit a little under the eye line. Several clips bow the head, and a camera level with
+    // the head bone then looks straight down onto the crown; from slightly below, a bowed
+    // head still shows a face.
+    camera.position.y = _head.y + (s.cam[1] - s.look[1]) * HEAD - 0.085 * HEAD;
+    camera.lookAt(_head.x, _head.y - 0.03 * HEAD, _head.z);
+  } else {
+    camera.position.set(s.cam[0] * HEAD * k, s.cam[1] * HEAD, s.cam[2] * HEAD * k);
+    camera.lookAt(s.look[0] * HEAD, s.look[1] * HEAD, s.look[2] * HEAD);
+  }
+
+  fitBackdrop();
+  renderer.render(scene, camera);
+};
+
+window.LIST_SHOTS = () => Object.keys(window.SHOTS);
+window.LIST_CLIPS = () => Object.keys(clips);
+// Render without touching expressions — used by lip-test.mjs to isolate morph targets.
+window.__rawRender = () => renderer.render(scene, camera);
+window.__THREE = THREE;
+window.__renderer = renderer;
+// Debug hooks used by selftest.mjs.
+window.__playTest = (clip) => { clips.__test = clip; window.__forceClip = '__test'; };
+
+(async () => {
+  try {
+    await loadCharacter();
+    // ?clips= names them directly, for a body that has its own small set rather than the
+    // 31 in clips.json — those were exported against a different character and will not
+    // bind to anything else.
+    if (q.get('clips')) {
+      await loadClips(q.get('clips').split(',').filter(Boolean));
+    } else {
+      const res = await fetch('./clips.json').then(r => r.json()).catch(() => null);
+      await loadClips(res ? res.clips.map(c => c.slug) : []);
+    }
+    // Props are built after the clips, because the seat height comes out of the animation.
+    SEAT_H = measureSeatHeight();
+    STATUS.seatHeight = +SEAT_H.toFixed(3);
+    buildProps();
+    if (q.get('look')) applyLook(byId(q.get('look')));
+    if (q.get('backdrops')) await loadBackdrops(q.get('backdrops'), Object.keys(MOODS));
+  } catch (e) {
+    STATUS.errors.push('fatal: ' + e.message);
+  }
+  window.setFrame('medium', 0);
+  window.READY = true;
+})();
+</script></body></html>

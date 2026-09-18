@@ -1,0 +1,20 @@
+{
+  "name": "vrm-episode-studio",
+  "version": "1.0.0",
+  "description": "Narrated 3D episodes from a VRM character, Mixamo motion capture and generated backdrops. No per-frame AI.",
+  "type": "commonjs",
+  "license": "MIT",
+  "scripts": {
+    "selftest": "cd stage && node selftest.mjs",
+    "poses": "cd stage && node posetest.mjs",
+    "looks": "cd stage && node looks-sheet.mjs",
+    "plan": "cd episode && node build/render.mjs --plan-only",
+    "draft": "cd episode && node build/render.mjs --draft",
+    "render": "cd episode && node build/render.mjs 24"
+  },
+  "dependencies": {
+    "@pixiv/three-vrm": "^3.5.5",
+    "playwright-core": "^1.63.0",
+    "three": "^0.186.0"
+  }
+}

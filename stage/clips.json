@@ -1,0 +1,285 @@
+{
+  "note": "Mixamo product ids, resolved from the public catalog API. fetch.mjs turns these into assets/anim/<slug>.fbx. MotionPacks are not supported: they export as a zip of several FBX files, which the loader does not unpack.",
+  "clips": [
+    {
+      "slug": "idle",
+      "name": "Standing Idle",
+      "use": "base loop, every shot without a specific action",
+      "id": "b3bcc81a-5213-451e-bcec-294026c5984a",
+      "variants": 3
+    },
+    {
+      "slug": "idle-happy",
+      "name": "Happy Idle",
+      "use": "validation beat",
+      "id": "c9ccf445-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "idle-sad",
+      "name": "Sad Idle",
+      "use": "the accusation / low point",
+      "id": "c9cce12b-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 3
+    },
+    {
+      "slug": "bored",
+      "name": "Bored",
+      "use": "waiting on hold",
+      "id": "c9c79d1f-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "yawn",
+      "name": "Yawn",
+      "use": "exhaustion beat",
+      "id": "c9c98361-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "thinking",
+      "name": "Thinking",
+      "use": "mechanism explanations",
+      "id": "c9c990e8-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "nod",
+      "name": "Thoughtful Head Nod",
+      "use": "agreement, archetype reveals",
+      "id": "c9c91939-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "shake",
+      "name": "Annoyed Head Shake",
+      "use": "that is a lie",
+      "id": "c9c90fbc-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "shrug",
+      "name": "Shrugging",
+      "use": "which one are you",
+      "id": "c9c69537-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "phone-talk",
+      "name": "Talking On Phone",
+      "use": "core subject of the episode",
+      "id": "c9c9f63d-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "phone-pace",
+      "name": "Talking Phone Pacing",
+      "use": "anxiety while on a call",
+      "id": "c9ca0249-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "phone-cell",
+      "name": "Talking On A Cell Phone",
+      "use": "variation so the loop is not obvious",
+      "id": "c9ca0104-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "calling",
+      "name": "Calling",
+      "use": "dialling, the dreaded moment",
+      "id": "c9c82503-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "texting",
+      "name": "Texting While Standing",
+      "use": "the preferred alternative",
+      "id": "c9c9fa4d-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "texting-walk",
+      "name": "Walking While Texting",
+      "use": "transition shots",
+      "id": "c9c9fd95-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "look-nervous",
+      "name": "Nervously Look Around",
+      "use": "avoidance archetype",
+      "id": "c9c900c8-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "look-around",
+      "name": "Look Around",
+      "use": "cold open",
+      "id": "c9c8f860-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 3
+    },
+    {
+      "slug": "sitting",
+      "name": "Sitting",
+      "use": "sofa shots, matches shot plan s000",
+      "id": "c9c89165-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 7
+    },
+    {
+      "slug": "sitting-talk",
+      "name": "Sitting Talking",
+      "use": "sofa + dialogue",
+      "id": "c9cd76b1-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "sitting-angry",
+      "name": "Sitting Angry",
+      "use": "frustration",
+      "id": "c9cb8a3b-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 3
+    },
+    {
+      "slug": "gesture-talk",
+      "name": "Talking",
+      "use": "narration-heavy stretches",
+      "id": "c9c6de72-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 9
+    },
+    {
+      "slug": "gesture-point",
+      "name": "Pointing Gesture",
+      "use": "stat callouts",
+      "id": "c9cd9ac5-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "gesture-happy",
+      "name": "Happy Hand Gesture",
+      "use": "closing metaphor",
+      "id": "c9c91ba2-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "gesture-angry",
+      "name": "Angry Gesture",
+      "use": "the accusation",
+      "id": "c9c917a2-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "arguing",
+      "name": "Standing Arguing",
+      "use": "conflict beat",
+      "id": "c9cd7919-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 3
+    },
+    {
+      "slug": "walk",
+      "name": "Walking",
+      "use": "wide transitions",
+      "id": "c9c609a9-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 20
+    },
+    {
+      "slug": "walk-start",
+      "name": "Start Walking",
+      "use": "walk-away enders",
+      "id": "c9c8b661-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 5
+    },
+    {
+      "slug": "walk-stop",
+      "name": "Walk To Stop",
+      "use": "arrivals",
+      "id": "c9c82683-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "walk-sad",
+      "name": "Sad Walk",
+      "use": "low point transition",
+      "id": "c9ccdb25-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "lean",
+      "name": "Leaning",
+      "use": "casual medium shots",
+      "id": "c9c69770-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "greeting",
+      "name": "Standing Greeting",
+      "use": "intro / outro",
+      "id": "c9c7996a-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 2
+    },
+    {
+      "slug": "reach-out",
+      "name": "Reaching Out",
+      "use": "reaching for her — the centre of this story",
+      "id": "c9ce7dba-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "praying",
+      "name": "Praying",
+      "use": "standing, swaying: begging Hades",
+      "id": "c9c6a884-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "crying",
+      "name": "Crying",
+      "use": "grief, rubbing eyes",
+      "id": "c9c984ee-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "acknowledge",
+      "name": "Acknowledging",
+      "use": "narrator conceding a point",
+      "id": "c9c91c6e-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "agreeing",
+      "name": "Agreeing",
+      "use": "assent",
+      "id": "c9c91ad5-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "relieved",
+      "name": "Relieved Sigh",
+      "use": "after the gods say yes",
+      "id": "c9c92112-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "dismiss",
+      "name": "Dismissing Gesture",
+      "use": "\"that is not the answer\"",
+      "id": "c9c8f19f-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "head-no",
+      "name": "Shaking Head No",
+      "use": "refusal, disbelief",
+      "id": "c9c90b3c-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    },
+    {
+      "slug": "reacting",
+      "name": "Reacting",
+      "use": "the turn — surprised, looking right",
+      "id": "c9c8214a-b96c-11e4-a802-0aaa78deedf9",
+      "variants": 1
+    }
+  ]
+}
