@@ -11,7 +11,7 @@ const url = `file://${path.resolve('scene.html')}?char=${encodeURIComponent('../
 await p.goto(url);
 try { await p.waitForFunction('window.READY === true', null, { timeout: 120000 }); }
 catch { console.log('TIMEOUT'); await b.close(); process.exit(1); }
-await p.evaluate(() => window.setFrame({ cam:[0.34,0.80,2.25], look:[0,0.58,0], clip:'idle', set:'none', push:0 }, 0.3));
+await p.evaluate(() => window.setFrame({ cam:[0.30,0.78,1.62], look:[0,0.56,0], clip:'idle', set:'none', push:0 }, 0.3));
 await p.screenshot({ path: process.argv[3] || `/private/tmp/claude-501/-Users-natalia-YouTube/675bd06e-eac6-469d-ab6f-aae401933995/scratchpad/${id}.png` });
 console.log('ok', id);
 await b.close();
