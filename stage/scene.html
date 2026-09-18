@@ -21,7 +21,12 @@ const W = +(q.get('w') || 1920), H = +(q.get('h') || 1080);
 const CHAR = q.get('char') || '../assets/fem_vroid.vrm';
 const STATUS = window.STATUS = { char: CHAR, clips: [], errors: [] };
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+// ?alpha=1 renders the character on a transparent ground, for compositing into a
+// thumbnail. The alpha buffer has to be requested at construction — setClearAlpha on an
+// opaque context does nothing, which looks like the backdrop refusing to go away.
+const ALPHA = q.get('alpha') === '1';
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: ALPHA });
+if (ALPHA) renderer.setClearColor(0x000000, 0);
 renderer.setSize(W, H); renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 // Shadows are what actually put a character on a floor. They are deterministic, so they
@@ -192,9 +197,9 @@ let wearRoot = null, tattooMesh = null;
 
 /**
  * A "look" is a palette over the VRoid material names plus geometry added to the skeleton.
- * Vita's own clothes are one mesh under one material, so the palette can only darken them.
- * The mythic sets therefore drop them to a neutral under-layer and build the silhouette out
- * of garment geometry, which is what actually reads at this shot length.
+ * The garments themselves are baked into the VRM mesh and cannot be swapped — a genuinely
+ * new outfit is a VRoid Studio job. This changes colour and silhouette, which is most of
+ * what reads at this shot length.
  */
 function applyLook(look) {
   if (!vrm) return;
@@ -222,14 +227,9 @@ function applyLook(look) {
   if (wearRoot) { wearRoot.removeFromParent(); }
   vrm.scene.traverse(o => { if (o.userData.__wear) o.removeFromParent(); });
   wearRoot = new THREE.Group(); wearRoot.userData.__wear = true;
-  const colors = { wear: look.wearColor, trim: look.trim, accent: look.accent || look.trim,
-                   ramp, scale: HEAD / 1.45 };
-  // A garment may override the set palette by arriving as { kind, wear, trim, accent }
-  // instead of a bare string. One palette per set cannot describe a miko — a white robe
-  // over a vermilion hakama is two colours that both have to be right.
-  for (const item of look.wear || []) {
-    const kind = typeof item === 'string' ? item : item.kind;
-    const g = buildWear(kind, vrm, typeof item === 'string' ? colors : { ...colors, ...item });
+  const colors = { wear: look.wearColor, trim: look.trim, ramp, scale: HEAD / 1.45 };
+  for (const kind of look.wear || []) {
+    const g = buildWear(kind, vrm, colors);
     g.userData.__wear = true;
     g.traverse(o => { o.userData.__wear = true; if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   }
@@ -651,7 +651,8 @@ window.setFrame = (shot, t, opts) => {
     camera.lookAt(s.look[0] * HEAD, s.look[1] * HEAD, s.look[2] * HEAD);
   }
 
-  fitBackdrop();
+  if (ALPHA) { bg.visible = false; for (const g of Object.values(PROPS)) g.visible = false; }
+  else fitBackdrop();
   renderer.render(scene, camera);
 };
 

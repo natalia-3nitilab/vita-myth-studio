@@ -207,94 +207,87 @@ export const LOOKS = [
   //   - no `tattoo` field. They read as decals on a cel-shaded body and were rejected.
   // A garment can override the set palette: give it as an object instead of a string.
   { id: 'delphi', body: 'Vita',   name: 'Delphi',      hair: '#d6c7a6', tops: '#2a2a32', shoes: '#2b2419',
-    wear: ['gown', 'overfold', 'wreath', 'beads'],
+    wear: ['sleeves', 'gown', 'overfold', 'wreath', 'beads'],
     wearColor: '#efe7d6', trim: '#c4a24c', accent: '#8d9b6a',
     iris: '#8a9a72', note: 'Greek. Doric chiton with the peplos overfold, laurel, gold.' },
 
   { id: 'volva', body: 'Vita',    name: 'Volva',       hair: '#b6a58f', tops: '#22242c', shoes: '#2b2119',
-    wear: [{ kind: 'apron', wear: '#5d6b7a', accent: '#c8862f' }, 'cloak', 'torc', 'beads'],
+    wear: ['sleeves', { kind: 'apron', wear: '#5d6b7a', accent: '#c8862f' }, 'cloak', 'torc', 'beads'],
     wearColor: '#3f4854', trim: '#2c333d', accent: '#c8862f',
     iris: '#8fa3b8', note: 'Norse. Hangerok apron dress on brooches, wool cloak, torc, amber.' },
 
   { id: 'druid', body: 'Vita',    name: 'Druid',       hair: '#8a6a52', tops: '#232a26', shoes: '#241f18',
-    wear: ['gown', { kind: 'mantle', wear: '#41603f' }, 'torc'],
+    wear: ['sleeves', 'gown', { kind: 'mantle', wear: '#41603f' }, 'torc'],
     wearColor: '#7d8a6a', trim: '#c9963c', accent: '#d8c48a',
     iris: '#6f9a72', note: 'Irish. Leine under a brat cloak pinned at the shoulder, torc.' },
 
   { id: 'miko', body: 'Vita',     name: 'Miko',        hair: '#4a3a42', tops: '#26262c', shoes: '#2a2020',
-    wear: ['gown', { kind: 'overskirt', wear: '#c1362c', trim: '#e8e2d6' },
+    wear: ['sleeves', 'gown', { kind: 'overskirt', wear: '#c1362c', trim: '#e8e2d6' },
            { kind: 'obi', wear: '#e8e2d6', trim: '#c1362c' }],
     wearColor: '#f2eee4', trim: '#d9d2c4', accent: '#c1362c',
     iris: '#6b5a4a', note: 'Japanese. White haku-e over vermilion hakama, wide obi.' },
 
   { id: 'firebird', body: 'Vita', name: 'Firebird',    hair: '#a08a6e', tops: '#2a2228', shoes: '#2b1f1a',
-    wear: ['gown', { kind: 'overskirt', wear: '#8f2a30', trim: '#d8b44a' }, 'sash', 'crest', 'beads'],
+    wear: ['sleeves', 'gown', { kind: 'overskirt', wear: '#8f2a30', trim: '#d8b44a' }, 'sash', 'crest', 'beads'],
     wearColor: '#efe6d4', trim: '#d8b44a', accent: '#9c2f36',
     iris: '#8a7250', note: 'Slavic. Linen rubakha, striped poneva, woven sash, kokoshnik.' },
 
   { id: 'nile', body: 'Vita',     name: 'Nile',        hair: '#2f2a30', tops: '#26262e', shoes: '#2a2620',
-    wear: ['gown', { kind: 'collar', wear: '#1f6f8f', trim: '#d9b24a', accent: '#8f2f3a' },
+    wear: ['sleeves', 'gown', { kind: 'collar', wear: '#1f6f8f', trim: '#d9b24a', accent: '#8f2f3a' },
            'circlet', 'bangles'],
     wearColor: '#e9e2cf', trim: '#d9b24a', accent: '#1f6f8f',
     iris: '#6a5a3a', note: 'Egyptian. Pleated kalasiris under a wesekh broad collar.' },
 
   { id: 'anansi', body: 'Vita',   name: 'Anansi',      hair: '#3a2c28', tops: '#282329', shoes: '#2a201a',
-    wear: ['gown', { kind: 'mantle', wear: '#d9a327', trim: '#1c7a4a' }, 'beads', 'bangles'],
+    wear: ['sleeves', 'gown', { kind: 'mantle', wear: '#d9a327', trim: '#1c7a4a' }, 'beads', 'bangles'],
     wearColor: '#25242a', trim: '#d9a327', accent: '#1c7a4a',
     iris: '#7a5a32', note: 'Akan. Kente strip-weave worn as a shoulder wrapper, gold.' },
 
   { id: 'quetzal', body: 'Vita',  name: 'Quetzal',     hair: '#33272c', tops: '#262630', shoes: '#241d1a',
-    wear: [{ kind: 'shawl', wear: '#1f9a91', trim: '#d94f36' }, 'overskirt',
+    wear: ['sleeves', { kind: 'shawl', wear: '#1f9a91', trim: '#d94f36' }, 'overskirt',
            { kind: 'collar', wear: '#1f9a91', trim: '#d94f36', accent: '#e0b83a' }],
     wearColor: '#e7ddc8', trim: '#d94f36', accent: '#1f9a91',
     iris: '#7a5a3a', note: 'Mesoamerican. Diamond quechquemitl over a wrapped skirt.' },
 
   { id: 'apsara', body: 'Vita',   name: 'Apsara',      hair: '#33262c', tops: '#2a2430', shoes: '#2a1f22',
-    wear: ['gown', { kind: 'mantle', wear: '#b0246a', trim: '#e0b23a' }, 'bangles', 'circlet', 'beads'],
+    wear: ['sleeves', 'gown', { kind: 'mantle', wear: '#b0246a', trim: '#e0b23a' }, 'bangles', 'circlet', 'beads'],
     wearColor: '#d9772a', trim: '#e0b23a', accent: '#b0246a',
     iris: '#6b4a30', note: 'South Asian. Draped sari with the dupatta over one shoulder.' },
 
   { id: 'selkie', body: 'Vita',   name: 'Selkie',      hair: '#6d6a68', tops: '#242730', shoes: '#22252a',
-    wear: [{ kind: 'gown', wear: '#8d9498', trim: '#6b747a' }, 'cloak', 'shawl'],
+    wear: ['sleeves', { kind: 'gown', wear: '#8d9498', trim: '#6b747a' }, 'cloak', 'shawl'],
     wearColor: '#3c4348', trim: '#2b3136', accent: '#9fb0ad',
     iris: '#7fa5a8', note: 'Hebridean. Undyed wool under a sealskin mantle, sea greys.' },
 ];
 
 // ---------------------------------------------------------------- skeleton metrics
 /**
- * Garment dimensions come from the character's own skeleton, not from one global scale
- * factor. Vita measures 1.71m to the top of the hair, not the 1.45m the first draft
- * assumed, so a hem written as "0.42 x scale" landed at the knee on one body and the shin
- * on another. Measure hips-to-ankle once and express every garment as a fraction of it and
- * a gown reaches the ankle on any VRM.
+ * Garment dimensions come from the character's own skeleton, measured along the bone chain
+ * rather than as world heights.
+ *
+ * Two things went wrong before this. Dimensioning from one global scale factor put the hem
+ * at the knee on a 1.71m body that the constant assumed was 1.45m. Dimensioning from world
+ * heights then broke differently: `applyLook` runs before the first clip is applied, so a
+ * piece placed at a world height and stood upright was built against a pose the render
+ * never uses — the skirt swung a quarter of a metre out behind her the moment the idle
+ * posed the pelvis. A bone's local translation is its rest length and does not move with
+ * the pose, so every measurement here is one of those.
  */
 function metrics(vrm) {
   const raw = (b) => vrm.humanoid.getRawBoneNode(b);
-  const wp = (b) => {
+  const len = (b, fallback) => {
     const n = raw(b);
-    if (!n) return null;
-    const v = new THREE.Vector3();
-    n.updateWorldMatrix(true, false);
-    n.getWorldPosition(v);
-    return v;
+    return n ? n.position.length() : fallback;
   };
-  const head = wp('head'), neck = wp('neck');
-  const chest = wp('upperChest') || wp('chest');
-  const spine = wp('spine'), hips = wp('hips');
-  const foot = wp('leftFoot') || wp('rightFoot');
-  const knee = wp('leftLowerLeg');
-  const headY = head?.y ?? 1.44;
-  const hipsY = hips?.y ?? 0.95;
-  const footY = foot?.y ?? hipsY - 0.80;
-  const leg = Math.max(0.2, hipsY - footY);
+  const thigh = len('leftLowerLeg', 0.37), shin = len('leftFoot', 0.43);
+  const leg = Math.max(0.2, thigh + shin);
   return {
-    headY, neckY: neck?.y ?? headY - 0.08,
-    chestY: chest?.y ?? headY - 0.19, spineY: spine?.y ?? hipsY + 0.05,
-    hipsY, footY, kneeY: knee?.y ?? (hipsY + footY) / 2, leg,
-    // Where the body's midline actually is. Not zero: this VRM's spine sits 1.5cm to one
-    // side of the origin, which is enough to hang a gown visibly off-centre.
-    cx: spine?.x ?? 0, cz: spine?.z ?? 0,
-    hx: head?.x ?? 0, hz: head?.z ?? 0,
+    leg, thigh, shin,
+    hipsToSpine: len('spine', 0.05),
+    spineToChest: len('chest', 0.115),
+    chestToUpper: len('upperChest', 0.128),
+    upperToNeck: len('neck', 0.12),
+    neckToHead: len('head', 0.075),
     // Hip half-width. A VRoid body is about a sixth of its leg length across the hip, which
     // is a better source for garment radius than anything derived from total height: total
     // height moves with the hair and with whatever the idle clip is doing to the arms.
@@ -314,6 +307,10 @@ function metrics(vrm) {
  */
 export function buildWear(kind, vrm, colors) {
   const raw = (b) => vrm.humanoid.getRawBoneNode(b);
+  // Attach to the NORMALIZED rig. Its bones are defined with identity rest rotation and +Y
+  // up the body, so "0.3 below the hips" is a plain local offset that holds in any pose.
+  // The raw bones carry the model's own rest rotations, which are not body-aligned.
+  const bone = (b) => vrm.humanoid.getNormalizedBoneNode(b) || raw(b);
   const mat = (hex, side = THREE.DoubleSide) => new THREE.MeshToonMaterial({
     color: hex, side, gradientMap: colors.ramp,
   });
@@ -343,42 +340,25 @@ export function buildWear(kind, vrm, colors) {
     mark(obj);
     node.add(obj);
   };
-
   /**
-   * Hang a world-upright group off a bone at a given world height.
-   *
-   * The first version of this just wrote `position.y = worldY - boneY`, which assumes a
-   * bone's local axes are the world's. They are not: the clip rotates the spine, so a gown
-   * placed that way swung out behind her and the laurel sat across her eyes. Converting the
-   * anchor through `worldToLocal` and cancelling the bone's world rotation puts the piece
-   * where it belongs at build time, and it still follows the bone once the clip moves.
+   * A surface of revolution from a profile given as [radius x girth, height fraction],
+   * where the height fraction runs 0 at the top to -1 at the bottom. Cheaper to write than
+   * a cone and it is the difference between a garment and a lampshade.
    */
-  const _q = new THREE.Quaternion();
-  const _wp = new THREE.Vector3();
-  const hang = (node, obj, worldY, worldX, worldZ) => {
-    node.updateWorldMatrix(true, false);
-    // Centre on the bone the piece hangs from, not on the spine. A skirt anchored to the
-    // spine's midline and parented to the hips ends up standing behind her the moment the
-    // clip swings her legs forward, which is most of the idle.
-    node.getWorldPosition(_wp);
-    if (worldX === undefined) worldX = _wp.x;
-    if (worldZ === undefined) worldZ = _wp.z;
-    node.getWorldQuaternion(_q);
-    obj.quaternion.premultiply(_q.clone().invert());
-    // Derive local-units-per-metre by measuring a one-metre world span through the bone's
-    // own matrix, rather than reading getWorldScale. The retargeted rig carries scale on
-    // more than one node in the chain, so the shortcut built a gown two thirds of the
-    // height it was asked for and a hem that stopped at the knee.
-    const p0 = node.worldToLocal(new THREE.Vector3(worldX, worldY, worldZ));
-    const p1 = node.worldToLocal(new THREE.Vector3(worldX, worldY + 1, worldZ));
-    const unit = p1.distanceTo(p0) || 1;
-    obj.scale.multiplyScalar(unit);
-    obj.position.copy(p0);
-    mark(obj);
-    node.add(obj);
+  const lathe = (profile, girth, height, seg = 30) => {
+    const pts = profile.map(([r, t]) => new THREE.Vector2(
+      Math.max(1e-3, r * girth), height * (t + 0.5)));
+    return new THREE.LatheGeometry(pts, seg);
   };
-  // A torso piece of world height h whose top edge sits at world height `top`.
-  const column = (top, h) => top - h / 2;
+  // Hang a piece off a normalized bone at `dy` metres along the body axis, +Y up.
+  const hang = (name, obj, dy, dz = 0) => {
+    const node = bone(name);
+    if (!node) return;
+    obj.position.set(obj.position.x, obj.position.y + dy, obj.position.z + dz);
+    fit(node, obj);
+  };
+  // A column of height h whose TOP edge sits dy above the bone.
+  const below = (top, h) => top - h / 2;
 
   if (kind === 'cape') {
     // A shoulder cape: a half-cone open at the front, hung off the chest bone.
@@ -456,112 +436,137 @@ export function buildWear(kind, vrm, colors) {
     // the Irish leine and the Slavic rubakha are all this shape with a different palette
     // and a different thing belted over it.
     //
-    // Built as two pieces on two bones rather than one cone on the spine. A single cone
-    // from chest to ankle is a 1m lever arm on one joint: the idle clip swings the pelvis
-    // and the whole skirt steps out from under her. The bodice follows the torso and the
-    // skirt follows the pelvis, which is how a real dress behaves anyway.
-    const spine = raw('spine') || chest;
-    const hips = raw('hips') || spine;
-    const waist = M.hipsY + (M.chestY - M.hipsY) * 0.42;
-    const top = M.chestY - 0.015, bh = Math.max(0.1, top - waist);
-    const bodice = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 0.94, M.girth * 1.16, bh, 28, 1, true), mat(colors.wear));
-    hang(spine, bodice, column(top, bh));
+    // Built as two pieces on two bones rather than one cone. A single cone from chest to
+    // ankle is a metre-long lever arm on one joint, and the pelvis swings under the torso
+    // through the whole idle. The bodice follows the torso and the skirt follows the
+    // pelvis, which is how a dress behaves anyway.
+    //
+    // Both are lathed rather than coned. A straight-sided cone reads as a traffic cone at
+    // any palette — the eye wants the waist to draw in and the hem to flare, and four
+    // control points on a profile curve buy that for nothing.
+    const torso = M.spineToChest + M.chestToUpper;
+    const bh = torso + 0.10;
+    const bodice = new THREE.Mesh(lathe([
+      [0.96, 0], [1.06, -0.30], [0.92, -0.70], [1.00, -1.0],
+    ], M.girth, bh), mat(colors.wear));
+    hang('spine', bodice, below(torso - 0.02, bh), 0.018);
 
-    const bot = M.footY + 0.055, sh = Math.max(0.2, waist + 0.02 - bot);
-    const skirt = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.14, M.girth * 1.78, sh, 30, 1, true), mat(colors.wear));
+    const sh = M.leg - 0.05 + M.hipsToSpine;
+    const skirt = new THREE.Mesh(lathe([
+      [0.86, 0], [1.02, -0.14], [1.34, -0.45], [1.72, -0.80], [1.92, -1.0],
+    ], M.girth, sh), mat(colors.wear));
     g.add(skirt);
     const hem = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.79, M.girth * 1.84, sh * 0.05, 30, 1, true), mat(colors.trim));
+      new THREE.CylinderGeometry(M.girth * 1.93, M.girth * 1.99, sh * 0.05, 30, 1, true), mat(colors.trim));
     hem.position.y = -sh / 2 + sh * 0.025;
     g.add(hem);
-    hang(hips, g, column(waist + 0.02, sh));
+    hang('hips', g, below(M.hipsToSpine + 0.06, sh), 0.045);
+  } else if (kind === 'sleeves') {
+    // Vita's arms are bare above a pair of glowing detached gauntlets, and no amount of
+    // robe below the shoulder gets past them: at a medium shot the arms are half of what
+    // the eye reads. A sleeve down each arm segment is the single piece that does most of
+    // the work of making her look dressed for a story rather than for a stage.
+    for (const side of ['left', 'right']) {
+      for (const [seg, child, r0, r1] of [
+        ['UpperArm', 'LowerArm', 0.055, 0.048],
+        ['LowerArm', 'Hand', 0.048, 0.058],
+      ]) {
+        const armRaw = raw(side + seg), armNorm = bone(side + seg);
+        const kid = raw(side + child);
+        if (!armRaw || !armNorm || !kid) continue;
+        const len = kid.position.length();
+        const tube = new THREE.Mesh(
+          new THREE.CylinderGeometry(r0, r1, len * 1.02, 18, 1, true), mat(colors.wear));
+        // The normalized rig points a limb down its own -Y, so a tube built on +Y only has
+        // to be flipped, not aimed at the child the way the raw rig needs.
+        tube.position.y = -len * 0.5;
+        fit(armNorm, tube);
+        g.userData.detached = true;
+      }
+    }
   } else if (kind === 'overfold') {
     // The apoptygma: a Doric peplos is cut longer than the body and the excess folded back
     // over the chest, so the fold is the garment's signature rather than a trim.
-    const top = M.chestY + 0.012, h = (M.chestY - M.hipsY) * 1.30;
+    const torso = M.spineToChest + M.chestToUpper;
+    const h = torso * 0.80;
     const fold = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 0.99, M.girth * 1.42, h, 28, 1, true), mat(colors.trim));
+      new THREE.CylinderGeometry(M.girth * 1.02, M.girth * 1.28, h, 28, 1, true), mat(colors.trim));
     g.add(fold);
-    hang(chest, g, column(top, h));
+    hang('spine', g, below(torso + 0.01, h));
   } else if (kind === 'cloak') {
     // Full-length and open at the front, so it frames the gown rather than hiding it.
-    const top = M.chestY + 0.045, bot = M.kneeY - 0.06, h = Math.max(0.25, top - bot);
+    const h = M.chestToUpper + M.spineToChest + M.hipsToSpine + M.thigh + 0.10;
     const c = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.14, M.girth * 2.00, h, 30, 1, true,
+      new THREE.CylinderGeometry(M.girth * 1.16, M.girth * 2.05, h, 30, 1, true,
                                  Math.PI * 0.34, Math.PI * 1.32), mat(colors.wear));
     g.add(c);
     const band = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 2.01, M.girth * 2.06, h * 0.045, 30, 1, true,
+      new THREE.CylinderGeometry(M.girth * 2.06, M.girth * 2.12, h * 0.045, 30, 1, true,
                                  Math.PI * 0.34, Math.PI * 1.32), mat(colors.trim));
     band.position.y = -h / 2 + h * 0.022;
     g.add(band);
-    hang(chest, g, column(top, h), undefined, undefined);
+    hang('upperChest', g, below(0.045, h), -0.012);
   } else if (kind === 'mantle') {
     // A himation, an Irish brat, a dupatta: one rectangle of cloth over the left shoulder
     // and round under the right arm. The asymmetry is the whole read, so this one is
     // deliberately tilted rather than hung square.
-    const top = M.chestY + 0.05, h = (M.chestY - M.hipsY) * 2.3;
+    const h = (M.spineToChest + M.chestToUpper) * 2.1;
     const drape = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.18, M.girth * 1.62, h, 28, 1, true,
+      new THREE.CylinderGeometry(M.girth * 1.20, M.girth * 1.66, h, 28, 1, true,
                                  Math.PI * 0.08, Math.PI * 1.02), mat(colors.wear));
     drape.rotation.z = 0.15;
     g.add(drape);
     const pin = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.008, 8, 18), mat(accent));
-    pin.position.set(-M.girth * 1.05, h / 2 - 0.035, 0.045);
+    pin.position.set(-M.girth * 1.08, h / 2 - 0.035, 0.048);
     g.add(pin);
-    hang(chest, g, column(top, h), M.cx, M.cz);
+    hang('upperChest', g, below(0.05, h));
   } else if (kind === 'apron') {
     // The Norse hangerok: a wool tube held up by two straps, each fastened at the chest by
     // an oval brooch. The brooches are the diagnostic part — without them it is a pinafore.
-    const spine = raw('spine') || chest;
-    const top = M.chestY - 0.035, bot = M.kneeY + 0.02, h = Math.max(0.2, top - bot);
+    const h = M.spineToChest + M.chestToUpper + M.hipsToSpine + M.thigh * 0.85;
     const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.04, M.girth * 1.46, h, 26, 1, true), mat(colors.wear));
+      new THREE.CylinderGeometry(M.girth * 1.10, M.girth * 1.78, h, 26, 1, true), mat(colors.wear));
     g.add(tube);
     for (const sx of [-1, 1]) {
       const strap = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.13, 0.012), mat(colors.wear));
-      strap.position.set(sx * M.girth * 0.58, h / 2 + 0.055, -0.020);
+      strap.position.set(sx * M.girth * 0.58, h / 2 + 0.055, -0.022);
       strap.rotation.z = sx * 0.05;
       g.add(strap);
       const brooch = new THREE.Mesh(new THREE.SphereGeometry(0.022, 14, 10), mat(accent));
       brooch.scale.set(1, 1.45, 0.42);
-      brooch.position.set(sx * M.girth * 0.60, h / 2 - 0.012, M.girth * 0.82);
+      brooch.position.set(sx * M.girth * 0.60, h / 2 - 0.015, M.girth * 0.88);
       g.add(brooch);
     }
-    hang(spine, g, column(top, h));
+    hang('spine', g, below(M.spineToChest + M.chestToUpper - 0.04, h));
   } else if (kind === 'overskirt') {
     // A wrap skirt over the gown, open down the front-left.
-    const hips = raw('hips');
-    const top = M.hipsY + 0.035, bot = M.kneeY - 0.14, h = Math.max(0.15, top - bot);
+    const h = M.thigh + 0.16;
     const wrap = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.32, M.girth * 1.74, h, 28, 1, true,
+      new THREE.CylinderGeometry(M.girth * 1.48, M.girth * 1.98, h, 28, 1, true,
                                  Math.PI * 0.12, Math.PI * 1.62), mat(colors.wear));
     g.add(wrap);
     const edge = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.75, M.girth * 1.80, h * 0.08, 28, 1, true,
+      new THREE.CylinderGeometry(M.girth * 1.99, M.girth * 2.05, h * 0.08, 28, 1, true,
                                  Math.PI * 0.12, Math.PI * 1.62), mat(colors.trim));
     edge.position.y = -h / 2 + h * 0.04;
     g.add(edge);
-    hang(hips, g, column(top, h));
+    hang('hips', g, below(M.hipsToSpine + 0.07, h), 0.030);
   } else if (kind === 'shawl') {
     // The quechquemitl: two rectangles seamed into a diamond that points front and back, so
     // it is built on four radial segments rather than a smooth cone.
-    const top = M.chestY + 0.035, h = (M.chestY - M.hipsY) * 1.5;
+    const h = (M.spineToChest + M.chestToUpper) * 1.45;
     const d = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 0.60, M.girth * 1.92, h, 4, 1, true), mat(colors.wear));
+      new THREE.CylinderGeometry(M.girth * 0.62, M.girth * 1.96, h, 4, 1, true), mat(colors.wear));
     d.rotation.y = Math.PI / 4;
     g.add(d);
     const fringe = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.93, M.girth * 1.97, h * 0.09, 4, 1, true), mat(colors.trim));
+      new THREE.CylinderGeometry(M.girth * 1.97, M.girth * 2.02, h * 0.09, 4, 1, true), mat(colors.trim));
     fringe.rotation.y = Math.PI / 4;
     fringe.position.y = -h / 2 + h * 0.045;
     g.add(fringe);
-    hang(chest, g, column(top, h), M.cx, M.cz);
+    hang('upperChest', g, below(0.035, h));
   } else if (kind === 'collar') {
     // The Egyptian wesekh: a broad flat collar that sits on the collarbone like a plate.
-    const base = M.chestY + (M.neckY - M.chestY) * 0.48;
     [colors.wear, colors.trim, accent].forEach((hex, i) => {
       const r0 = M.girth * (0.40 + i * 0.28), r1 = M.girth * (0.66 + i * 0.28);
       const ring = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 32, 1), mat(hex));
@@ -569,10 +574,9 @@ export function buildWear(kind, vrm, colors) {
       ring.position.set(0, -i * 0.014, 0.004);
       g.add(ring);
     });
-    hang(chest, g, base);
+    hang('upperChest', g, 0.055);
   } else if (kind === 'torc') {
     // Celtic and Norse both: a stiff open neck ring with terminals at the throat.
-    const neck = raw('neck');
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(0.052, 0.0105, 10, 26, Math.PI * 1.58), mat(colors.wear));
     ring.rotation.x = Math.PI / 2; ring.rotation.z = Math.PI * 0.71;
@@ -582,7 +586,7 @@ export function buildWear(kind, vrm, colors) {
       ball.position.set(sx * 0.030, 0, 0.043);
       g.add(ball);
     }
-    hang(neck, g, M.neckY - 0.022);
+    hang('neck', g, -0.018);
   } else if (kind === 'beads') {
     [0.058, 0.078, 0.098].forEach((r, i) => {
       const ring = new THREE.Mesh(
@@ -591,76 +595,71 @@ export function buildWear(kind, vrm, colors) {
       ring.position.set(0, -i * 0.026, 0.010 + i * 0.008);
       g.add(ring);
     });
-    hang(chest, g, M.chestY + 0.010);
+    hang('upperChest', g, 0.012);
   } else if (kind === 'obi') {
     // A wide Japanese waist sash, tied at the back. Nearly a third of the torso.
-    const spine = raw('spine') || chest;
-    const h = (M.chestY - M.hipsY) * 0.74;
+    const h = (M.spineToChest + M.chestToUpper) * 0.66;
     const band = new THREE.Mesh(
-      new THREE.CylinderGeometry(M.girth * 1.10, M.girth * 1.14, h, 26, 1, true), mat(colors.wear));
+      new THREE.CylinderGeometry(M.girth * 1.12, M.girth * 1.16, h, 26, 1, true), mat(colors.wear));
     g.add(band);
     const knot = new THREE.Mesh(new THREE.BoxGeometry(0.11, h * 0.90, 0.05), mat(colors.trim));
-    knot.position.set(0, 0, -M.girth * 1.16);
+    knot.position.set(0, 0, -M.girth * 1.20);
     g.add(knot);
-    hang(spine, g, M.spineY + 0.030);
+    hang('spine', g, 0.045);
   } else if (kind === 'veil') {
     // Head covering plus two panels to the shoulder. Read at a distance it is the single
     // strongest "this is a story from a long time ago" signal available.
-    const head = raw('head');
     const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.152, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
+      new THREE.SphereGeometry(0.158, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.58),
       mat(colors.wear, THREE.DoubleSide));
     cap.rotation.x = -0.20;
     g.add(cap);
     for (const sx of [-1, 1]) {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.050, 0.20, 0.012), mat(colors.wear));
-      panel.position.set(sx * 0.125, -0.105, -0.012);
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.21, 0.012), mat(colors.wear));
+      panel.position.set(sx * 0.130, -0.115, -0.012);
       panel.rotation.z = sx * 0.09;
       g.add(panel);
     }
-    hang(head, g, M.headY + 0.045);
+    hang('head', g, 0.075, -0.012);
   } else if (kind === 'wreath') {
-    const head = raw('head');
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.0095, 8, 26), mat(colors.wear));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.130, 0.0095, 8, 26), mat(colors.wear));
     ring.rotation.x = Math.PI / 2 - 0.10;
     g.add(ring);
     for (let i = 0; i < 14; i++) {
       const a = (i / 14) * Math.PI * 2;
       const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.019, 8, 6), mat(colors.trim));
       leaf.scale.set(0.42, 1, 0.30);
-      leaf.position.set(Math.cos(a) * 0.128, 0.008, Math.sin(a) * 0.128);
+      leaf.position.set(Math.cos(a) * 0.130, 0.008, Math.sin(a) * 0.130);
       leaf.rotation.set(0.5, -a, 0.35);
       g.add(leaf);
     }
-    hang(head, g, M.headY + 0.105);
+    hang('head', g, 0.125);
   } else if (kind === 'circlet') {
-    const head = raw('head');
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.126, 0.0068, 8, 28), mat(colors.wear));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.0068, 8, 28), mat(colors.wear));
     ring.rotation.x = Math.PI / 2 - 0.08;
     g.add(ring);
     const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.018), mat(accent));
-    drop.position.set(0, -0.012, 0.124);
+    drop.position.set(0, -0.014, 0.126);
     g.add(drop);
-    hang(head, g, M.headY + 0.085);
+    hang('head', g, 0.110);
   } else if (kind === 'crest') {
     // A kokoshnik: the tall arched crest that reads as Slavic from the thumbnail alone.
-    const head = raw('head');
     const arc = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.125, 0.118, 0.135, 24, 1, true, Math.PI * 0.42, Math.PI * 1.16),
+      new THREE.CylinderGeometry(0.132, 0.124, 0.135, 24, 1, true, Math.PI * 0.42, Math.PI * 1.16),
       mat(colors.wear));
     g.add(arc);
     const rim = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.127, 0.127, 0.018, 24, 1, true, Math.PI * 0.42, Math.PI * 1.16),
+      new THREE.CylinderGeometry(0.134, 0.134, 0.018, 24, 1, true, Math.PI * 0.42, Math.PI * 1.16),
       mat(colors.trim));
     rim.position.y = 0.064;
     g.add(rim);
     for (let i = 0; i < 5; i++) {
       const a = Math.PI * 0.55 + (i / 4) * Math.PI * 0.90;
       const stud = new THREE.Mesh(new THREE.SphereGeometry(0.0125, 10, 8), mat(accent));
-      stud.position.set(Math.cos(a) * 0.123, 0.012, Math.sin(a) * 0.123);
+      stud.position.set(Math.cos(a) * 0.130, 0.012, Math.sin(a) * 0.130);
       g.add(stud);
     }
-    hang(head, g, M.headY + 0.165);
+    hang('head', g, 0.195, 0.006);
   } else if (kind === 'bangles') {
     for (const side of ['left', 'right']) {
       const arm = raw(side + 'LowerArm');
