@@ -9,9 +9,9 @@ Every number here was measured on a finished 9:20 episode, not estimated.
 | script | Gemini 2.5 Pro on Vertex, ~2k output tokens | ~$0.02 |
 | voice | Kokoro-82M, local | **free** |
 | motion | Mixamo, free with an Adobe account | **free** |
-| backdrops | 11 images, one per story beat | $0.43 – $1.11 |
+| backdrops | 11 images, one per story beat | $0.50 – $1.65 |
 | render | three.js + headless Chrome + ffmpeg, local | **free** |
-| **total** | | **$0.45 – $1.67** |
+| **total** | | **$0.52 – $1.67** |
 
 The backdrop range is the whole variable. Cost moves with the image model and the
 resolution you ask for, not with the length of the episode — a 10-minute episode and a
