@@ -23,13 +23,13 @@ flickers and every render is identical.
 | **Material** | traditional tales, genuinely out of copyright. Never a story by a named modern author, and never an invented "folk tale" |
 | **Character** | Vita (VRM). Verify the licence embedded in any `.vrm` before monetising |
 | **Motion** | Mixamo, free with an Adobe account |
-| **Backdrops** | Gemini 3.1 Flash Image on Vertex, $0.045–$0.15 each, ~11 per episode |
+| **Backdrops** | Gemini 3.1 Flash Image on Vertex, ~11 per episode. Prices in [BUDGET.md](BUDGET.md) |
 | **Voice** | Kokoro-82M, local, free |
 
 Competitor research — who else retells folklore at this length, what they title, and which
-tales are already saturated — is researched against live Google Search and kept on the niche
-record. The current snapshot is [docs/NICHE.md](docs/NICHE.md); refresh it rather than
-editing it.
+tales are already saturated — is researched against live Google Search. The current snapshot
+is [docs/NICHE.md](docs/NICHE.md). It is generated, so regenerate it rather than editing it
+by hand.
 
 ## Why not generate the frames
 
@@ -45,10 +45,10 @@ generates **eleven** background images and reuses them across 13,436 frames.
 | --- | --- |
 | Example episode | 9:20, 1920×1080, 13,436 frames |
 | Render time | 7.4 min (~30 fps, faster than real time) |
-| Cost | ~$0.86, all of it backdrops |
+| Cost | ~$0.86, nearly all of it backdrops — see [BUDGET.md](BUDGET.md) |
 | Voice | Kokoro-82M, local, free |
 | Motion | Mixamo, free with an Adobe account |
-| Backdrops | Gemini 3.1 Flash Image on Vertex, $0.045–$0.15 each |
+| Backdrops | Gemini 3.1 Flash Image on Vertex — see [BUDGET.md](BUDGET.md) |
 
 ## How it works
 

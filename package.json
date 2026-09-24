@@ -1,5 +1,5 @@
 {
-  "name": "vrm-episode-studio",
+  "name": "vita-myth-studio",
   "version": "1.0.0",
   "description": "Narrated 3D episodes from a VRM character, Mixamo motion capture and generated backdrops. No per-frame AI.",
   "type": "commonjs",
