@@ -1,6 +1,6 @@
 # Sleep Tales (Japanese folklore) — the niche
 
-_Generated from live research on 2026-09-18 by `deep-science-studio/scripts/write-niche-docs.mjs`._
+_Generated from live research on 2026-09-18 by the niche research script._
 _Do not edit by hand: re-run the research from the dashboard and regenerate._
 
 ## Focus

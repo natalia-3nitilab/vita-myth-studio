@@ -27,14 +27,9 @@ flickers and every render is identical.
 | **Voice** | Kokoro-82M, local, free |
 
 Competitor research — who else retells folklore at this length, what they title, and which
-tales are already saturated — is researched against live Google Search and kept on the
-niche record in [deep-science-studio](https://github.com/natalia-3nitilab/deep-science-studio). The current snapshot is
-[docs/NICHE.md](docs/NICHE.md); refresh it rather than editing it.
-
-This is one of four pipelines. The others are
-[deep-science-studio](https://github.com/natalia-3nitilab/deep-science-studio) (stock footage and image motion),
-[duo-reels-studio](https://github.com/natalia-3nitilab/duo-reels-studio) (two characters, vertical reels) and
-[psyche-anime-studio](https://github.com/natalia-3nitilab/psyche-anime-studio) (locally generated anime stills).
+tales are already saturated — is researched against live Google Search and kept on the niche
+record. The current snapshot is [docs/NICHE.md](docs/NICHE.md); refresh it rather than
+editing it.
 
 ## Why not generate the frames
 
